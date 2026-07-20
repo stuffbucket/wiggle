@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import "./App.css";
 
 type Block = { index: number; text: string; matters: boolean };
@@ -10,11 +14,40 @@ type ProviderStatus = { online: boolean; provider: string; model: string };
 type Ingested =
   | { kind: "text"; name: string; text: string }
   | { kind: "image"; name: string; media_type: string; base64: string }
-  | { kind: "file"; name: string; mime: string; size: number };
+  | { kind: "file"; name: string; path: string; mime: string; size: number };
 
 type Attachment =
   | { kind: "image"; name: string; mediaType: string; base64: string }
-  | { kind: "file"; name: string; mime: string; size: number };
+  | { kind: "file"; name: string; path: string; mime: string; size: number };
+
+// Render a single block's text as inline markdown (bold/italic/code/links),
+// keeping it on one line and opening links externally.
+const mdComponents = {
+  p: (props: { children?: React.ReactNode }) => <>{props.children}</>,
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        if (href) openUrl(href).catch(() => {});
+      }}
+    >
+      {children}
+    </a>
+  ),
+};
+
+function MdLine({ text }: { text: string }) {
+  return (
+    <Markdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
+      components={mdComponents}
+    >
+      {text}
+    </Markdown>
+  );
+}
 
 function abToBase64(buf: ArrayBuffer): string {
   let binary = "";
@@ -45,6 +78,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -159,6 +193,7 @@ function App() {
               setAttachment({
                 kind: "file",
                 name: item.name,
+                path: item.path,
                 mime: item.mime,
                 size: item.size,
               });
@@ -210,6 +245,14 @@ function App() {
 
   const clearAttachment = () => setAttachment(null);
 
+  const copyKept = useCallback(() => {
+    const t = (blocks ?? [])
+      .filter((b) => b.matters)
+      .map((b) => b.text)
+      .join("\n");
+    navigator.clipboard.writeText(t).catch(() => {});
+  }, [blocks]);
+
   const kept = blocks?.filter((b) => b.matters).length ?? 0;
   const statusText = busy
     ? "wiggling…"
@@ -250,6 +293,24 @@ function App() {
                 <span className="attmeta"> · {humanSize(attachment.size)}</span>
               )}
             </span>
+            {attachment.kind === "file" && (
+              <>
+                <button
+                  className="tinybtn"
+                  onClick={() => openPath(attachment.path).catch(() => {})}
+                >
+                  open
+                </button>
+                <button
+                  className="tinybtn"
+                  onClick={() =>
+                    revealItemInDir(attachment.path).catch(() => {})
+                  }
+                >
+                  reveal
+                </button>
+              </>
+            )}
             <button className="x" onClick={clearAttachment} aria-label="remove">
               ×
             </button>
@@ -287,14 +348,25 @@ function App() {
           <div className="result">
             <p className="summary">
               kept <strong>{kept}</strong> of {blocks.length}
+              <span className="actions">
+                <button className="tinybtn" onClick={copyKept}>
+                  copy kept
+                </button>
+                <button
+                  className="tinybtn"
+                  onClick={() => setExpanded((v) => !v)}
+                >
+                  {expanded ? "collapse" : "expand"}
+                </button>
+              </span>
             </p>
-            <div className="reading">
+            <div className={`reading${expanded ? " expanded" : ""}`}>
               {blocks.map((b) =>
                 b.text.trim() === "" ? (
                   <div key={b.index} className="blank" />
                 ) : (
                   <p key={b.index} className={b.matters ? "keep" : "fade"}>
-                    {b.text}
+                    <MdLine text={b.text} />
                   </p>
                 ),
               )}
@@ -304,6 +376,7 @@ function App() {
               onClick={() => {
                 setBlocks(null);
                 setAttachment(null);
+                setExpanded(false);
               }}
             >
               ← new

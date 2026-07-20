@@ -225,11 +225,60 @@ body {
   color: var(--ink);
 }
 
+.actions {
+  float: right;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.tinybtn {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--faded);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.tinybtn:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.09);
+}
+
 .reading {
   max-height: 48vh;
   overflow-y: auto;
   font-size: 18px;
   line-height: 1.5;
+}
+
+.reading.expanded {
+  max-height: 78vh;
+}
+
+/* inline markdown inside blocks */
+.reading a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.reading code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+}
+
+.reading strong {
+  font-weight: 700;
+}
+
+.reading em {
+  font-style: italic;
 }
 
 .reading p {

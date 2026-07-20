@@ -23,6 +23,7 @@ pub enum Ingested {
     /// Anything else — shown as a file chip.
     File {
         name: String,
+        path: String,
         mime: String,
         size: u64,
     },
@@ -55,7 +56,12 @@ pub fn ingest_path(path: &str) -> Result<Ingested, String> {
         }
     }
 
-    Ok(Ingested::File { name, mime, size })
+    Ok(Ingested::File {
+        name,
+        path: path.to_string(),
+        mime,
+        size,
+    })
 }
 
 /// Guess a MIME type from a path's extension. A cheap first pass; a magic-byte
