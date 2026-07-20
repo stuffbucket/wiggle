@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Summon Wiggle",
+    "checkUpdates": "Check for Updates…",
     "quit": "Quit Wiggle"
   }
 }

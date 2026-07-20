@@ -1,0 +1,59 @@
+name: windows
+
+# Windows is a later target (arm64 macOS is the flagship). This builds the NSIS
+# per-user installer for a tag on demand. Currently UNSIGNED (SmartScreen will
+# warn) — add Authenticode signing when a cert is available.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  nsis:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: oven-sh/setup-bun@v2
+      - name: Ensure Rust msvc toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup target add x86_64-pc-windows-msvc
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            src-tauri/target
+          key: windows-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Install dependencies
+        shell: bash
+        run: bun install --frozen-lockfile
+      - name: Tauri build (NSIS)
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          VER="${TAG#v}"
+          bun run tauri build --bundles nsis --config "{\"version\":\"${VER}\"}"
+      - name: Stage + upload the installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          $nsisDir = 'src-tauri/target/release/bundle/nsis'
+          $setup = Get-ChildItem -Path $nsisDir -Filter '*-setup.exe' | Select-Object -First 1
+          $dst = "wiggle-$env:TAG-windows-x64-setup.exe"
+          Copy-Item $setup.FullName $dst
+          ((Get-FileHash $dst -Algorithm SHA256).Hash.ToLower() + "  $dst") | Out-File "$dst.sha256" -Encoding ascii
+          gh release upload "$env:TAG" $dst "$dst.sha256" --repo $env:REPO --clobber

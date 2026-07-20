@@ -1,0 +1,9 @@
+# stuffbucket/macos-builder client config for Wiggle.
+# The private builder owns all Apple signing / notarization / DMG packaging
+# (no AppleScript — hdiutil/codesign/notarytool/stapler). We only declare what
+# to build and how to name it.
+app_path = src-tauri/target/release/bundle/macos/Wiggle.app
+volname = Wiggle
+bundle_id = com.stuffbucket.wiggle
+entitlements = default
+artifact = dmg

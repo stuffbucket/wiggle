@@ -113,13 +113,20 @@ fn summon(app: AppHandle) -> Result<(), String> {
 
 /// Relocalize the tray menu (called by the UI once i18n resolves the language).
 #[tauri::command]
-fn set_tray_labels(app: AppHandle, summon: String, quit: String) -> Result<(), String> {
+fn set_tray_labels(
+    app: AppHandle,
+    summon: String,
+    update: String,
+    quit: String,
+) -> Result<(), String> {
     if let Some(tray) = app.tray_by_id("wiggle-tray") {
         let s = MenuItem::with_id(&app, "summon", &summon, true, None::<&str>)
             .map_err(|e| e.to_string())?;
+        let u = MenuItem::with_id(&app, "update", &update, true, None::<&str>)
+            .map_err(|e| e.to_string())?;
         let q =
             MenuItem::with_id(&app, "quit", &quit, true, None::<&str>).map_err(|e| e.to_string())?;
-        let menu = Menu::with_items(&app, &[&s, &q]).map_err(|e| e.to_string())?;
+        let menu = Menu::with_items(&app, &[&s, &u, &q]).map_err(|e| e.to_string())?;
         tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
     }
     Ok(())
@@ -136,7 +143,9 @@ fn summon_overlay(app: &AppHandle) -> Result<(), String> {
     }
     #[cfg(not(target_os = "macos"))]
     {
+        use tauri_plugin_positioner::{Position, WindowExt};
         if let Some(w) = app.get_webview_window("main") {
+            let _ = w.move_window(Position::BottomCenter);
             let _ = w.show();
             let _ = w.set_focus();
             let _ = app.emit("wiggle://summon", ());
@@ -158,12 +167,29 @@ fn hide_overlay(app: &AppHandle) {
     }
 }
 
+/// Check for an update; if one is available, download, install, and relaunch.
+/// A no-op (Ok) when up to date or when no release/manifest is reachable.
+#[cfg(desktop)]
+async fn run_update(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update
+            .download_and_install(|_chunk, _total| {}, || {})
+            .await
+            .map_err(|e| e.to_string())?;
+        app.restart();
+    }
+    Ok(())
+}
+
 // ---- tray -------------------------------------------------------------------
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let summon_i = MenuItem::with_id(app, "summon", "Summon Wiggle", true, None::<&str>)?;
+    let update_i = MenuItem::with_id(app, "update", "Check for Updates…", true, None::<&str>)?;
     let quit_i = MenuItem::with_id(app, "quit", "Quit Wiggle", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&summon_i, &quit_i])?;
+    let menu = Menu::with_items(app, &[&summon_i, &update_i, &quit_i])?;
 
     let icon = app
         .default_window_icon()
@@ -179,6 +205,17 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "summon" => {
                 let _ = summon_overlay(app);
+            }
+            "update" => {
+                #[cfg(desktop)]
+                {
+                    let app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = run_update(app).await {
+                            eprintln!("wiggle: update check failed: {e}");
+                        }
+                    });
+                }
             }
             "quit" => app.exit(0),
             _ => {}
@@ -211,6 +248,31 @@ pub fn run() {
     #[cfg(target_os = "macos")]
     {
         builder = builder.plugin(tauri_nspanel::init());
+    }
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    // Windows/Linux have no NSPanel; summon a normal window via a chord and
+    // position it with the positioner plugin.
+    #[cfg(not(target_os = "macos"))]
+    {
+        use tauri_plugin_global_shortcut::ShortcutState;
+        builder = builder
+            .plugin(tauri_plugin_positioner::init())
+            .plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_shortcut("CmdOrCtrl+Space")
+                    .expect("valid global shortcut")
+                    .with_handler(|app, _shortcut, event| {
+                        if event.state == ShortcutState::Pressed {
+                            let _ = summon_overlay(app);
+                        }
+                    })
+                    .build(),
+            );
     }
 
     builder

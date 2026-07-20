@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wiggle — keep only what won't budge</title>
+    <meta
+      name="description"
+      content="A macOS menubar app that reads a wall of text and keeps only the lines that matter."
+    />
+    <style>
+      :root {
+        --paper: #f5f3f0;
+        --ink: #1a1a1a;
+        --faded: #b9b4ac;
+        --rule: #e2ded7;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.55;
+      }
+      .wrap { max-width: 640px; margin: 0 auto; padding: 12vh 28px 8vh; }
+      .brand {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        font-size: 13px;
+      }
+      h1 { font-size: 34px; line-height: 1.15; margin: 20px 0 8px; font-weight: 400; }
+      .lede { font-size: 20px; color: #3a3630; margin: 0 0 8px; }
+      .fade { color: var(--faded); }
+      .keep { color: var(--ink); }
+      .reading { font-size: 19px; margin: 28px 0; }
+      .reading p { margin: 0 0 4px; }
+      .dl {
+        display: inline-block;
+        margin: 8px 12px 8px 0;
+        padding: 11px 22px;
+        background: var(--ink);
+        color: var(--paper);
+        text-decoration: none;
+        border-radius: 10px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 13px;
+        letter-spacing: 0.03em;
+      }
+      .dl.secondary { background: transparent; color: var(--faded); padding-left: 0; }
+      .dl.secondary:hover { color: var(--ink); }
+      .meta {
+        margin-top: 40px;
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px;
+        color: var(--faded);
+      }
+      code { background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 4px; font-size: 0.85em; }
+      a { color: inherit; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="brand">WIGGLE</div>
+      <h1>Keep only what won't budge.</h1>
+      <p class="lede">
+        A macOS menubar app that reads a wall of text and keeps the lines that
+        matter — graying out the rest.
+      </p>
+
+      <div class="reading">
+        <p class="fade">Thanks everyone for the great discussion today.</p>
+        <p class="keep">Decision: we ship the new onboarding flow on Monday.</p>
+        <p class="fade">Really appreciate all the hard work going into this.</p>
+        <p class="keep">Blocker: legal must approve the copy by Friday.</p>
+      </div>
+
+      <p>
+        Double-tap <strong>Ctrl</strong> anywhere. The screen dims, a card drops
+        near the bottom of your screen. Paste, drop a screenshot, or type — Wiggle
+        mutates the meaning of every block and keeps the ones that would change
+        what you do.
+      </p>
+
+      <p style="margin-top: 28px">
+        <a class="dl" href="https://github.com/stuffbucket/wiggle/releases/latest/download/Wiggle_aarch64.dmg">
+          Download for macOS ↓
+        </a>
+        <a class="dl secondary" href="https://github.com/stuffbucket/wiggle/releases/latest">
+          all releases →
+        </a>
+      </p>
+
+      <div class="meta">
+        Apple silicon · no API key needed · finds a local model
+        (<code>maximal</code> or Ollama) on its own.<br />
+        Open source at
+        <a href="https://github.com/stuffbucket/wiggle">github.com/stuffbucket/wiggle</a>.
+      </div>
+    </main>
+  </body>
+</html>

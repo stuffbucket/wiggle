@@ -97,6 +97,7 @@ function App() {
         await i18n.changeLanguage(normalizeLocale(tag));
         invoke("set_tray_labels", {
           summon: i18n.t("tray.summon"),
+          update: i18n.t("tray.checkUpdates"),
           quit: i18n.t("tray.quit"),
         }).catch(() => {});
       })
