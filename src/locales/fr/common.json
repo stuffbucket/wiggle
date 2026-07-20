@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "en attente d'un modèle"
+  },
+  "placeholder": {
+    "default": "Colle le fil, dépose une capture, tape…  ⏎ pour wiggle",
+    "drop": "dépose-la —"
+  },
+  "hint": {
+    "noProvider": "Pas encore de modèle. Lancez maximal (localhost:4141) ou Ollama — Wiggle se connecte automatiquement."
+  },
+  "summary": "gardé {{kept}} sur {{total}}",
+  "action": {
+    "copyKept": "copier gardés",
+    "expand": "développer",
+    "collapse": "réduire",
+    "new": "← nouveau",
+    "open": "ouvrir",
+    "reveal": "révéler"
+  },
+  "tray": {
+    "summon": "Invoquer Wiggle",
+    "quit": "Quitter Wiggle"
+  }
+}

@@ -3,9 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
+import { locale as osLocale } from "@tauri-apps/plugin-os";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
+import i18n, { normalizeLocale } from "./i18n";
 import "./App.css";
 
 type Block = { index: number; text: string; matters: boolean };
@@ -80,10 +83,23 @@ function App() {
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useTranslation();
 
+  // One-time: read UI config, resolve locale, relocalize the tray, probe status.
   useEffect(() => {
     invoke<{ dim: number; locale: string }>("get_config")
-      .then((c) => setDim(c.dim))
+      .then(async (c) => {
+        setDim(c.dim);
+        let tag = c.locale;
+        if (!tag || tag === "auto") {
+          tag = (await osLocale().catch(() => null)) ?? "en";
+        }
+        await i18n.changeLanguage(normalizeLocale(tag));
+        invoke("set_tray_labels", {
+          summon: i18n.t("tray.summon"),
+          quit: i18n.t("tray.quit"),
+        }).catch(() => {});
+      })
       .catch(() => {});
     invoke<ProviderStatus>("provider_status").then(setStatus).catch(() => {});
   }, []);
@@ -255,10 +271,10 @@ function App() {
 
   const kept = blocks?.filter((b) => b.matters).length ?? 0;
   const statusText = busy
-    ? "wiggling…"
+    ? t("status.wiggling")
     : status.online
       ? `${status.provider} · ${status.model}`
-      : "waiting for a model";
+      : t("status.waiting");
 
   return (
     <div
@@ -299,7 +315,7 @@ function App() {
                   className="tinybtn"
                   onClick={() => openPath(attachment.path).catch(() => {})}
                 >
-                  open
+                  {t("action.open")}
                 </button>
                 <button
                   className="tinybtn"
@@ -307,7 +323,7 @@ function App() {
                     revealItemInDir(attachment.path).catch(() => {})
                   }
                 >
-                  reveal
+                  {t("action.reveal")}
                 </button>
               </>
             )}
@@ -326,19 +342,14 @@ function App() {
               onChange={(e) => setText(e.currentTarget.value)}
               onKeyDown={onInputKey}
               placeholder={
-                dragging
-                  ? "drop it —"
-                  : "Paste the thread, drop a screenshot, type…  ⏎ to wiggle"
+                dragging ? t("placeholder.drop") : t("placeholder.default")
               }
               spellCheck={false}
               autoFocus
               rows={3}
             />
             {error === "no-provider" && (
-              <p className="hint">
-                No model yet. Start <code>maximal</code> (localhost:4141) or Ollama —
-                Wiggle connects on its own.
-              </p>
+              <p className="hint">{t("hint.noProvider")}</p>
             )}
             {error && error !== "no-provider" && (
               <p className="hint err">{error}</p>
@@ -347,16 +358,16 @@ function App() {
         ) : (
           <div className="result">
             <p className="summary">
-              kept <strong>{kept}</strong> of {blocks.length}
+              {t("summary", { kept, total: blocks.length })}
               <span className="actions">
                 <button className="tinybtn" onClick={copyKept}>
-                  copy kept
+                  {t("action.copyKept")}
                 </button>
                 <button
                   className="tinybtn"
                   onClick={() => setExpanded((v) => !v)}
                 >
-                  {expanded ? "collapse" : "expand"}
+                  {expanded ? t("action.collapse") : t("action.expand")}
                 </button>
               </span>
             </p>
@@ -379,7 +390,7 @@ function App() {
                 setExpanded(false);
               }}
             >
-              ← new
+              {t("action.new")}
             </button>
           </div>
         )}

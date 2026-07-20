@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "waiting for a model"
+  },
+  "placeholder": {
+    "default": "Paste the thread, drop a screenshot, type…  ⏎ to wiggle",
+    "drop": "drop it —"
+  },
+  "hint": {
+    "noProvider": "No model yet. Start maximal (localhost:4141) or Ollama — Wiggle connects on its own."
+  },
+  "summary": "kept {{kept}} of {{total}}",
+  "action": {
+    "copyKept": "copy kept",
+    "expand": "expand",
+    "collapse": "collapse",
+    "new": "← new",
+    "open": "open",
+    "reveal": "reveal"
+  },
+  "tray": {
+    "summon": "Summon Wiggle",
+    "quit": "Quit Wiggle"
+  }
+}

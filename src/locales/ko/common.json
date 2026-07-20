@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "모델 대기 중"
+  },
+  "placeholder": {
+    "default": "스레드를 붙이고, 스크린샷을 놓고, 입력…  ⏎ wiggle 실행",
+    "drop": "여기에 놓으세요 —"
+  },
+  "hint": {
+    "noProvider": "모델이 아직 없습니다. maximal (localhost:4141) 또는 Ollama를 시작하세요 — Wiggle이 자동으로 연결됩니다."
+  },
+  "summary": "{{total}}개 중 {{kept}}개 유지",
+  "action": {
+    "copyKept": "유지된 항목 복사",
+    "expand": "확장",
+    "collapse": "축소",
+    "new": "← 새로 만들기",
+    "open": "열기",
+    "reveal": "표시"
+  },
+  "tray": {
+    "summon": "Wiggle 실행",
+    "quit": "Wiggle 종료"
+  }
+}

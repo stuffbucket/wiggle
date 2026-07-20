@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "等待模型"
+  },
+  "placeholder": {
+    "default": "粘贴线程，拖放截图，输入…  ⏎ 开始 wiggle",
+    "drop": "放在这里 —"
+  },
+  "hint": {
+    "noProvider": "还没有模型。启动 maximal (localhost:4141) 或 Ollama — Wiggle 将自动连接。"
+  },
+  "summary": "保留了 {{kept}} 个，共 {{total}} 个",
+  "action": {
+    "copyKept": "复制已保留",
+    "expand": "展开",
+    "collapse": "折叠",
+    "new": "← 新建",
+    "open": "打开",
+    "reveal": "显示"
+  },
+  "tray": {
+    "summon": "启动 Wiggle",
+    "quit": "退出 Wiggle"
+  }
+}

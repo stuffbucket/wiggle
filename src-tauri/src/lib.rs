@@ -111,6 +111,20 @@ fn summon(app: AppHandle) -> Result<(), String> {
     summon_overlay(&app)
 }
 
+/// Relocalize the tray menu (called by the UI once i18n resolves the language).
+#[tauri::command]
+fn set_tray_labels(app: AppHandle, summon: String, quit: String) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("wiggle-tray") {
+        let s = MenuItem::with_id(&app, "summon", &summon, true, None::<&str>)
+            .map_err(|e| e.to_string())?;
+        let q =
+            MenuItem::with_id(&app, "quit", &quit, true, None::<&str>).map_err(|e| e.to_string())?;
+        let menu = Menu::with_items(&app, &[&s, &q]).map_err(|e| e.to_string())?;
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 // ---- overlay helpers (platform-dispatched) ----------------------------------
 
 fn summon_overlay(app: &AppHandle) -> Result<(), String> {
@@ -190,7 +204,9 @@ pub fn run() {
     // Give users a documented settings.json to edit on first launch.
     Settings::ensure_on_disk();
 
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_opener::init());
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_os::init());
 
     #[cfg(target_os = "macos")]
     {
@@ -242,7 +258,8 @@ pub fn run() {
             provider_status,
             get_config,
             dismiss,
-            summon
+            summon,
+            set_tray_labels
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

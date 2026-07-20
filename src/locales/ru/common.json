@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "ожидание модели"
+  },
+  "placeholder": {
+    "default": "Вставьте тред, перетащите скриншот, печатайте…  ⏎ для wiggle",
+    "drop": "отпустите —"
+  },
+  "hint": {
+    "noProvider": "Модель еще не установлена. Запустите maximal (localhost:4141) или Ollama — Wiggle подключится автоматически."
+  },
+  "summary": "сохранено {{kept}} из {{total}}",
+  "action": {
+    "copyKept": "копировать сохраненные",
+    "expand": "развернуть",
+    "collapse": "свернуть",
+    "new": "← новый",
+    "open": "открыть",
+    "reveal": "показать"
+  },
+  "tray": {
+    "summon": "Запустить Wiggle",
+    "quit": "Выход из Wiggle"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "esperando un modelo"
+  },
+  "placeholder": {
+    "default": "Pega el hilo, suelta una captura, escribe…  ⏎ para wiggle",
+    "drop": "suéltalo —"
+  },
+  "hint": {
+    "noProvider": "Sin modelo aún. Inicia maximal (localhost:4141) u Ollama — Wiggle se conecta automáticamente."
+  },
+  "summary": "mantuve {{kept}} de {{total}}",
+  "action": {
+    "copyKept": "copiar mantenidos",
+    "expand": "expandir",
+    "collapse": "contraer",
+    "new": "← nuevo",
+    "open": "abrir",
+    "reveal": "revelar"
+  },
+  "tray": {
+    "summon": "Invocar Wiggle",
+    "quit": "Salir de Wiggle"
+  }
+}

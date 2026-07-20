@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "等候模型"
+  },
+  "placeholder": {
+    "default": "貼上執行緒，拖放螢幕截圖，輸入…  ⏎ 開始 wiggle",
+    "drop": "放在這裡 —"
+  },
+  "hint": {
+    "noProvider": "還沒有模型。啟動 maximal (localhost:4141) 或 Ollama — Wiggle 將自動連線。"
+  },
+  "summary": "保留了 {{kept}} 個，共 {{total}} 個",
+  "action": {
+    "copyKept": "複製已保留",
+    "expand": "展開",
+    "collapse": "折疊",
+    "new": "← 新建",
+    "open": "開啟",
+    "reveal": "顯示"
+  },
+  "tray": {
+    "summon": "啟動 Wiggle",
+    "quit": "結束 Wiggle"
+  }
+}

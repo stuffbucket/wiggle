@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "मॉडल की प्रतीक्षा"
+  },
+  "placeholder": {
+    "default": "थ्रेड पेस्ट करें, स्क्रीनशॉट छोड़ें, टाइप करें…  ⏎ wiggle के लिए",
+    "drop": "यहां छोड़ें —"
+  },
+  "hint": {
+    "noProvider": "अभी कोई मॉडल नहीं। maximal (localhost:4141) या Ollama शुरू करें — Wiggle स्वचालित रूप से जुड़ जाता है।"
+  },
+  "summary": "{{total}} में से {{kept}} रखे",
+  "action": {
+    "copyKept": "रखे गए की प्रतिलिपि",
+    "expand": "विस्तार",
+    "collapse": "संक्षिप्त करें",
+    "new": "← नया",
+    "open": "खोलें",
+    "reveal": "प्रकट करें"
+  },
+  "tray": {
+    "summon": "Wiggle शुरू करें",
+    "quit": "Wiggle से बाहर निकलें"
+  }
+}

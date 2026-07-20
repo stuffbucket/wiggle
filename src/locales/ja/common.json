@@ -1,0 +1,26 @@
+{
+  "status": {
+    "wiggling": "wiggling…",
+    "waiting": "モデルを待機中"
+  },
+  "placeholder": {
+    "default": "スレッドを貼る、スクリーンショットを落とす、入力…  ⏎ でwiggle",
+    "drop": "ドロップしてください —"
+  },
+  "hint": {
+    "noProvider": "モデルはまだありません。maximal (localhost:4141) または Ollama を起動してください — Wiggle が自動的に接続します。"
+  },
+  "summary": "{{total}} 件中 {{kept}} 件を保持",
+  "action": {
+    "copyKept": "保持をコピー",
+    "expand": "展開",
+    "collapse": "折りたたむ",
+    "new": "← 新規",
+    "open": "開く",
+    "reveal": "表示"
+  },
+  "tray": {
+    "summon": "Wiggle を起動",
+    "quit": "Wiggle を終了"
+  }
+}
