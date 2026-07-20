@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -9,15 +8,19 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import i18n, { normalizeLocale } from "./i18n";
+import {
+  dismiss as dismissCmd,
+  getConfig,
+  ingestPath,
+  providerStatus,
+  setTrayLabels,
+  wiggleImage as wiggleImageCmd,
+  wiggleText,
+  type Block,
+  type ProviderStatus,
+} from "./lib/client";
+import { abToBase64, humanSize } from "./lib/format";
 import "./App.css";
-
-type Block = { index: number; text: string; matters: boolean };
-type ProviderStatus = { online: boolean; provider: string; model: string };
-
-type Ingested =
-  | { kind: "text"; name: string; text: string }
-  | { kind: "image"; name: string; media_type: string; base64: string }
-  | { kind: "file"; name: string; path: string; mime: string; size: number };
 
 type Attachment =
   | { kind: "image"; name: string; mediaType: string; base64: string }
@@ -52,22 +55,6 @@ function MdLine({ text }: { text: string }) {
   );
 }
 
-function abToBase64(buf: ArrayBuffer): string {
-  let binary = "";
-  const bytes = new Uint8Array(buf);
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
-
-function humanSize(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
-}
-
 function App() {
   const [text, setText] = useState("");
   const [blocks, setBlocks] = useState<Block[] | null>(null);
@@ -87,7 +74,7 @@ function App() {
 
   // One-time: read UI config, resolve locale, relocalize the tray, probe status.
   useEffect(() => {
-    invoke<{ dim: number; locale: string }>("get_config")
+    getConfig()
       .then(async (c) => {
         setDim(c.dim);
         let tag = c.locale;
@@ -95,14 +82,14 @@ function App() {
           tag = (await osLocale().catch(() => null)) ?? "en";
         }
         await i18n.changeLanguage(normalizeLocale(tag));
-        invoke("set_tray_labels", {
+        setTrayLabels({
           summon: i18n.t("tray.summon"),
           update: i18n.t("tray.checkUpdates"),
           quit: i18n.t("tray.quit"),
         }).catch(() => {});
       })
       .catch(() => {});
-    invoke<ProviderStatus>("provider_status").then(setStatus).catch(() => {});
+    providerStatus().then(setStatus).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -121,7 +108,7 @@ function App() {
   }, []);
 
   const dismiss = useCallback(() => {
-    invoke("dismiss").catch(() => {});
+    dismissCmd().catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -140,10 +127,7 @@ function App() {
       setBusy(true);
       setError(null);
       try {
-        const res = await invoke<Block[]>("wiggle_image", {
-          mime: mediaType,
-          data: base64,
-        });
+        const res = await wiggleImageCmd(mediaType, base64);
         setBlocks(res);
       } catch (e) {
         const msg = String(e);
@@ -165,7 +149,7 @@ function App() {
     setBusy(true);
     setError(null);
     try {
-      const res = await invoke<Block[]>("wiggle", { text });
+      const res = await wiggleText(text);
       setBlocks(res);
     } catch (e) {
       const msg = String(e);
@@ -192,7 +176,7 @@ function App() {
       void (async () => {
         for (const path of paths) {
           try {
-            const item = await invoke<Ingested>("ingest_path", { path });
+            const item = await ingestPath(path);
             if (item.kind === "text") {
               setBlocks(null);
               setAttachment(null);

@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "啟動 Wiggle",
+    "checkUpdates": "檢查更新…",
     "quit": "結束 Wiggle"
   }
 }

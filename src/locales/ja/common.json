@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Wiggle を起動",
+    "checkUpdates": "アップデートを確認…",
     "quit": "Wiggle を終了"
   }
 }

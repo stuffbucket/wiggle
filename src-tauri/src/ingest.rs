@@ -87,3 +87,56 @@ pub fn mime_from_path(path: &str) -> String {
     }
     .to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mime_by_extension() {
+        assert_eq!(mime_from_path("a/b/c.png"), "image/png");
+        assert_eq!(mime_from_path("shot.JPEG"), "image/jpeg");
+        assert_eq!(mime_from_path("notes.md"), "text/markdown");
+        assert_eq!(mime_from_path("main.rs"), "text/plain");
+        assert_eq!(mime_from_path("data.bin"), "application/octet-stream");
+        assert_eq!(mime_from_path("noext"), "application/octet-stream");
+    }
+
+    #[test]
+    fn ingests_text_image_and_file() {
+        let dir = std::env::temp_dir();
+
+        let txt = dir.join("wiggle_test_note.txt");
+        std::fs::write(&txt, "hello\nworld").unwrap();
+        match ingest_path(txt.to_str().unwrap()).unwrap() {
+            Ingested::Text { name, text } => {
+                assert_eq!(name, "wiggle_test_note.txt");
+                assert_eq!(text, "hello\nworld");
+            }
+            other => panic!("expected Text, got {other:?}"),
+        }
+        let _ = std::fs::remove_file(&txt);
+
+        let png = dir.join("wiggle_test_pixel.png");
+        std::fs::write(&png, [0x89, 0x50, 0x4E, 0x47]).unwrap();
+        match ingest_path(png.to_str().unwrap()).unwrap() {
+            Ingested::Image {
+                media_type, base64, ..
+            } => {
+                assert_eq!(media_type, "image/png");
+                assert!(!base64.is_empty());
+            }
+            other => panic!("expected Image, got {other:?}"),
+        }
+        let _ = std::fs::remove_file(&png);
+
+        let bin = dir.join("wiggle_test_blob.bin");
+        std::fs::write(&bin, [0u8, 1, 2, 3]).unwrap();
+        match ingest_path(bin.to_str().unwrap()).unwrap() {
+            Ingested::File { mime, .. } => assert_eq!(mime, "application/octet-stream"),
+            other => panic!("expected File, got {other:?}"),
+        }
+        let _ = std::fs::remove_file(&bin);
+    }
+}
+

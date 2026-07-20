@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Wiggle aufrufen",
+    "checkUpdates": "Nach Updates suchen…",
     "quit": "Wiggle beenden"
   }
 }

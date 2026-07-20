@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Invoquer Wiggle",
+    "checkUpdates": "Rechercher des mises à jour…",
     "quit": "Quitter Wiggle"
   }
 }

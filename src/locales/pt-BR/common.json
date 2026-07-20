@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Invocar Wiggle",
+    "checkUpdates": "Verificar atualizações…",
     "quit": "Sair de Wiggle"
   }
 }

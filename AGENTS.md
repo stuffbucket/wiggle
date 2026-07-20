@@ -39,6 +39,24 @@ cd src-tauri && cargo check    # Rust typecheck
 CI=true bun run tauri build    # release .app + .dmg  (CI=true is REQUIRED, see below)
 ```
 
+## Tests
+
+```sh
+bun test               # frontend unit tests (bun test + happy-dom)
+bun run test:rust      # cargo test (engine parsing, ingest, settings)
+bun run test:all       # both
+```
+
+- Frontend tests live beside the code as `src/lib/*.test.ts`. Pure logic
+  (`locale`, `format`) and catalog integrity (all 12 locales share en's keys +
+  keep `{{kept}}`/`{{total}}`) need no DOM; IPC tests mock the bridge with
+  `@tauri-apps/api/mocks` (`mockIPC`/`clearMocks`) over a happy-dom `window`
+  (preloaded via `bunfig.toml` → `test-setup.ts`).
+- Keep IPC behind `src/lib/client.ts` so it stays mockable; test files are
+  excluded from the production `tsc` build.
+- Rust tests are in-module `#[cfg(test)] mod tests`. `.github/workflows/ci.yml`
+  runs both suites on push/PR.
+
 ## Constraints & gotchas (read before building/releasing)
 
 - **Apple: arm64 only.** No Intel build.

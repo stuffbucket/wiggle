@@ -150,3 +150,59 @@ fn slice_json_array(raw: &str) -> Option<&str> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_plain_verdict_array() {
+        let v = parse_verdicts(r#"[{"i":0,"matters":true},{"i":1,"matters":false}]"#);
+        assert_eq!(v.len(), 2);
+        assert_eq!(v[0].i, 0);
+        assert!(v[0].matters);
+        assert!(!v[1].matters);
+    }
+
+    #[test]
+    fn parses_fenced_and_prose_wrapped() {
+        let raw = "Sure:\n```json\n[{\"i\":2,\"matters\":true}]\n```\ndone";
+        let v = parse_verdicts(raw);
+        assert_eq!(v.len(), 1);
+        assert_eq!(v[0].i, 2);
+        assert!(v[0].matters);
+    }
+
+    #[test]
+    fn missing_matters_defaults_false() {
+        let v = parse_verdicts(r#"[{"i":0}]"#);
+        assert_eq!(v.len(), 1);
+        assert!(!v[0].matters);
+    }
+
+    #[test]
+    fn malformed_yields_empty() {
+        assert!(parse_verdicts("no json here").is_empty());
+        assert!(parse_verdicts("").is_empty());
+        assert!(parse_verdicts("{not an array}").is_empty());
+    }
+
+    #[test]
+    fn slices_outermost_array() {
+        assert_eq!(slice_json_array("x[1,2]y"), Some("[1,2]"));
+        assert_eq!(slice_json_array("nope"), None);
+        assert_eq!(slice_json_array("]["), None); // end before start
+    }
+
+    #[test]
+    fn parses_image_text_verdicts() {
+        let v = parse_text_verdicts(
+            r#"[{"text":"Ship Monday","matters":true},{"text":"thanks","matters":false}]"#,
+        );
+        assert_eq!(v.len(), 2);
+        assert_eq!(v[0].0, "Ship Monday");
+        assert!(v[0].1);
+        assert!(!v[1].1);
+    }
+}
+

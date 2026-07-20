@@ -147,3 +147,53 @@ impl Default for Endpoint {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_are_sane() {
+        let s = Settings::default();
+        assert_eq!(s.provider, Provider::Auto);
+        assert_eq!(s.maximal.base_url, "http://localhost:4141");
+        assert_eq!(s.ollama.base_url, "http://localhost:11434");
+        assert_eq!(s.hotkey.taps, 2);
+        assert_eq!(s.hotkey.window_ms, 400);
+        assert_eq!(s.locale, "auto");
+    }
+
+    #[test]
+    fn round_trips_through_json() {
+        let s = Settings::default();
+        let json = serde_json::to_string(&s).unwrap();
+        let back: Settings = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.maximal.model, s.maximal.model);
+        assert_eq!(back.provider, s.provider);
+    }
+
+    #[test]
+    fn partial_json_fills_from_defaults() {
+        // Only `provider` is present; container-level #[serde(default)] fills the
+        // rest from Settings::default() — so maximal must still be localhost:4141.
+        let s: Settings = serde_json::from_str(r#"{"provider":"ollama"}"#).unwrap();
+        assert_eq!(s.provider, Provider::Ollama);
+        assert_eq!(s.maximal.base_url, "http://localhost:4141");
+        assert_eq!(s.hotkey.window_ms, 400);
+    }
+
+    #[test]
+    fn config_dir_honors_xdg() {
+        let prev = std::env::var("XDG_CONFIG_HOME").ok();
+        std::env::set_var("XDG_CONFIG_HOME", "/tmp/wiggle_xdg_test");
+        assert_eq!(
+            config_dir(),
+            std::path::PathBuf::from("/tmp/wiggle_xdg_test/wiggle")
+        );
+        match prev {
+            Some(v) => std::env::set_var("XDG_CONFIG_HOME", v),
+            None => std::env::remove_var("XDG_CONFIG_HOME"),
+        }
+    }
+}
+

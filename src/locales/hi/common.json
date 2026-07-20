@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Wiggle शुरू करें",
+    "checkUpdates": "अपडेट जांचें…",
     "quit": "Wiggle से बाहर निकलें"
   }
 }

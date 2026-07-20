@@ -21,6 +21,7 @@
   },
   "tray": {
     "summon": "Wiggle 실행",
+    "checkUpdates": "업데이트 확인…",
     "quit": "Wiggle 종료"
   }
 }
