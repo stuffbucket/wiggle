@@ -1,23 +1,35 @@
 {
   "status": {
     "wiggling": "wiggling…",
+    "judging": "判断中…",
     "waiting": "等待模型"
   },
   "placeholder": {
-    "default": "粘贴线程，拖放截图，输入…  ⏎ 开始 wiggle",
+    "default": "粘贴帖子、拖拽截图、输入…  ⏎ 来 wiggle",
     "drop": "放在这里 —"
   },
   "hint": {
-    "noProvider": "还没有模型。启动 maximal (localhost:4141) 或 Ollama — Wiggle 将自动连接。"
+    "noProvider": "还没有模型。启动 maximal (localhost:4141) 或 Ollama — Wiggle 会自动连接。"
   },
-  "summary": "保留了 {{kept}} 个，共 {{total}} 个",
+  "verdict": {
+    "trimmed": "删除了 {{filler}} 个 (共 {{total}} 个 · {{kept}} 个必需)",
+    "allKept": "没有可删除的 — 全部必需",
+    "allFiller": "全是冗余 — 没有必需内容"
+  },
+  "history": {
+    "position": "历史 · {{pos}} / {{total}}"
+  },
   "action": {
-    "copyKept": "复制已保留",
+    "copy": "复制保留部分",
+    "copied": "已复制",
     "expand": "展开",
     "collapse": "折叠",
-    "new": "← 新建",
+    "new": "重新开始",
     "open": "打开",
-    "reveal": "显示"
+    "reveal": "在 Finder 中显示",
+    "remove": "删除",
+    "dismiss": "关闭",
+    "settings": "设置"
   },
   "tray": {
     "summon": "启动 Wiggle",

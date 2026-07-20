@@ -1,6 +1,7 @@
 {
   "status": {
     "wiggling": "wiggling…",
+    "judging": "judging…",
     "waiting": "waiting for a model"
   },
   "placeholder": {
@@ -10,14 +11,25 @@
   "hint": {
     "noProvider": "No model yet. Start maximal (localhost:4141) or Ollama — Wiggle connects on its own."
   },
-  "summary": "kept {{kept}} of {{total}}",
+  "verdict": {
+    "trimmed": "trimmed {{filler}} of {{total}} · {{kept}} load-bearing",
+    "allKept": "nothing to trim — it's all load-bearing",
+    "allFiller": "all filler — nothing load-bearing here"
+  },
+  "history": {
+    "position": "history · {{pos}} of {{total}}"
+  },
   "action": {
-    "copyKept": "copy kept",
+    "copy": "copy kept",
+    "copied": "copied",
     "expand": "expand",
     "collapse": "collapse",
-    "new": "← new",
+    "new": "start over",
     "open": "open",
-    "reveal": "reveal"
+    "reveal": "reveal in Finder",
+    "remove": "remove",
+    "dismiss": "close",
+    "settings": "settings"
   },
   "tray": {
     "summon": "Summon Wiggle",

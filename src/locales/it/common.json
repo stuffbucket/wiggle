@@ -1,27 +1,39 @@
 {
   "status": {
     "wiggling": "wiggling…",
+    "judging": "analizzando…",
     "waiting": "in attesa di un modello"
   },
   "placeholder": {
-    "default": "Incolla il thread, rilascia uno screenshot, digita…  ⏎ per wiggle",
+    "default": "Incolla il thread, trascina uno screenshot, digita…  ⏎ per wiggle",
     "drop": "rilascialo —"
   },
   "hint": {
-    "noProvider": "Nessun modello ancora. Avvia maximal (localhost:4141) o Ollama — Wiggle si connette automaticamente."
+    "noProvider": "Nessun modello ancora. Avvia maximal (localhost:4141) oppure Ollama — Wiggle si connette da solo."
   },
-  "summary": "mantenuto {{kept}} di {{total}}",
+  "verdict": {
+    "trimmed": "tagliati {{filler}} di {{total}} · {{kept}} essenziale",
+    "allKept": "niente da tagliare — tutto essenziale",
+    "allFiller": "tutto inutile — niente essenziale qui"
+  },
+  "history": {
+    "position": "cronologia · {{pos}} di {{total}}"
+  },
   "action": {
-    "copyKept": "copia mantenuti",
+    "copy": "copia essenziale",
+    "copied": "copiato",
     "expand": "espandi",
-    "collapse": "comprimi",
-    "new": "← nuovo",
+    "collapse": "riduci",
+    "new": "ricomincia",
     "open": "apri",
-    "reveal": "rivela"
+    "reveal": "mostra in Finder",
+    "remove": "rimuovi",
+    "dismiss": "chiudi",
+    "settings": "impostazioni"
   },
   "tray": {
     "summon": "Richiama Wiggle",
-    "checkUpdates": "Verifica aggiornamenti…",
+    "checkUpdates": "Controlla aggiornamenti…",
     "quit": "Esci da Wiggle"
   }
 }

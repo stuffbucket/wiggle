@@ -1,27 +1,39 @@
 {
   "status": {
-    "wiggling": "wiggling…",
+    "wiggling": "remue…",
+    "judging": "évalue…",
     "waiting": "en attente d'un modèle"
   },
   "placeholder": {
-    "default": "Colle le fil, dépose une capture, tape…  ⏎ pour wiggle",
-    "drop": "dépose-la —"
+    "default": "Colle le fil, lâche une capture, tape…  ⏎ pour remuer",
+    "drop": "lâche-le —"
   },
   "hint": {
-    "noProvider": "Pas encore de modèle. Lancez maximal (localhost:4141) ou Ollama — Wiggle se connecte automatiquement."
+    "noProvider": "Pas encore de modèle. Lance maximal (localhost:4141) ou Ollama — Wiggle se connecte tout seul."
   },
-  "summary": "gardé {{kept}} sur {{total}}",
+  "verdict": {
+    "trimmed": "raccourci {{filler}} sur {{total}} · {{kept}} essentiel",
+    "allKept": "rien à raccourcir — tout est essentiel",
+    "allFiller": "du remplissage — rien d'essentiel ici"
+  },
+  "history": {
+    "position": "historique · {{pos}} sur {{total}}"
+  },
   "action": {
-    "copyKept": "copier gardés",
+    "copy": "copier l'essentiel",
+    "copied": "copié",
     "expand": "développer",
     "collapse": "réduire",
-    "new": "← nouveau",
+    "new": "recommencer",
     "open": "ouvrir",
-    "reveal": "révéler"
+    "reveal": "révéler dans Finder",
+    "remove": "supprimer",
+    "dismiss": "fermer",
+    "settings": "paramètres"
   },
   "tray": {
     "summon": "Invoquer Wiggle",
-    "checkUpdates": "Rechercher des mises à jour…",
+    "checkUpdates": "Vérifier les mises à jour…",
     "quit": "Quitter Wiggle"
   }
 }

@@ -54,10 +54,18 @@ for (const loc of SUPPORTED) {
   });
 }
 
-test("every locale preserves the {{kept}}/{{total}} placeholders", () => {
+test("every locale preserves the verdict interpolation placeholders", () => {
   for (const loc of SUPPORTED) {
-    const summary = (catalogs[loc] as { summary: string }).summary;
-    expect(summary, `${loc} summary missing {{kept}}`).toContain("{{kept}}");
-    expect(summary, `${loc} summary missing {{total}}`).toContain("{{total}}");
+    const trimmed = (catalogs[loc] as { verdict: { trimmed: string } }).verdict
+      .trimmed;
+    expect(trimmed, `${loc} verdict.trimmed missing {{filler}}`).toContain(
+      "{{filler}}",
+    );
+    expect(trimmed, `${loc} verdict.trimmed missing {{total}}`).toContain(
+      "{{total}}",
+    );
+    expect(trimmed, `${loc} verdict.trimmed missing {{kept}}`).toContain(
+      "{{kept}}",
+    );
   }
 });

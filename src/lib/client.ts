@@ -31,6 +31,8 @@ export const providerStatus = () => invoke<ProviderStatus>("provider_status");
 
 export const getConfig = () => invoke<UiConfig>("get_config");
 
+export const settingsPath = () => invoke<string>("settings_path");
+
 export const dismiss = () => invoke("dismiss");
 
 export const summon = () => invoke("summon");

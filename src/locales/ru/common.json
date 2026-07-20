@@ -1,26 +1,38 @@
 {
   "status": {
-    "wiggling": "wiggling…",
+    "wiggling": "покачивается…",
+    "judging": "оценивается…",
     "waiting": "ожидание модели"
   },
   "placeholder": {
-    "default": "Вставьте тред, перетащите скриншот, печатайте…  ⏎ для wiggle",
-    "drop": "отпустите —"
+    "default": "Вставьте ветку, бросьте скриншот, печатайте…  ⏎ чтобы покачать",
+    "drop": "кидайте сюда —"
   },
   "hint": {
-    "noProvider": "Модель еще не установлена. Запустите maximal (localhost:4141) или Ollama — Wiggle подключится автоматически."
+    "noProvider": "Модели нет. Запустите maximal (localhost:4141) или Ollama — Wiggle сам подключится."
   },
-  "summary": "сохранено {{kept}} из {{total}}",
+  "verdict": {
+    "trimmed": "обрезано {{filler}} из {{total}} · {{kept}} несущих",
+    "allKept": "нечего обрезать — всё несущее",
+    "allFiller": "одна вода — ничего несущего"
+  },
+  "history": {
+    "position": "история · {{pos}} из {{total}}"
+  },
   "action": {
-    "copyKept": "копировать сохраненные",
+    "copy": "копировать несущее",
+    "copied": "скопировано",
     "expand": "развернуть",
     "collapse": "свернуть",
-    "new": "← новый",
+    "new": "начать заново",
     "open": "открыть",
-    "reveal": "показать"
+    "reveal": "показать в Finder",
+    "remove": "удалить",
+    "dismiss": "закрыть",
+    "settings": "настройки"
   },
   "tray": {
-    "summon": "Запустить Wiggle",
+    "summon": "Вызвать Wiggle",
     "checkUpdates": "Проверить обновления…",
     "quit": "Выход из Wiggle"
   }

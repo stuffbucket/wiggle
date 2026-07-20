@@ -2,6 +2,7 @@
   --paper: #f5f3f0;
   --ink: #1a1a1a;
   --faded: #b9b4ac;
+  --navy: #284981;
   --rule: #e2ded7;
   --alert: #b4593f;
   --ok: #3a9b6e;
@@ -19,7 +20,6 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  /* The window is a transparent full-screen panel; the scrim provides the dim. */
   background: transparent;
 }
 
@@ -28,7 +28,7 @@ body {
   overflow: hidden;
 }
 
-/* Full-screen dim; clicking it dismisses the overlay. */
+/* Full-screen dim; clicking it dismisses. */
 .scrim {
   height: 100vh;
   width: 100vw;
@@ -40,20 +40,29 @@ body {
   cursor: default;
 }
 
-/* The summon card, near the bottom-center of the focused monitor. */
 .card {
   width: min(640px, 92vw);
-  padding: 18px 20px 16px;
+  padding: 16px 20px 14px;
   color: var(--ink);
   background: rgba(245, 243, 240, 0.86);
   backdrop-filter: blur(24px) saturate(1.3);
   -webkit-backdrop-filter: blur(24px) saturate(1.3);
   border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid var(--navy);
   border-radius: 16px;
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.28),
     0 2px 8px rgba(0, 0, 0, 0.12);
   animation: rise 160ms ease;
+}
+
+.card.dragging {
+  border-color: rgba(40, 73, 129, 0.4);
+}
+
+/* Viewing history (not the live draft) → dashed, faded top hairline. */
+.card.history {
+  border-top: 1px dashed var(--faded);
 }
 
 @keyframes rise {
@@ -67,72 +76,34 @@ body {
   }
 }
 
-.card.dragging {
-  border-color: rgba(26, 26, 26, 0.35);
-  box-shadow:
-    0 0 0 2px rgba(26, 26, 26, 0.14),
-    0 24px 60px rgba(0, 0, 0, 0.28);
-}
-
-/* Attachment chip (dropped/pasted image or file). */
-.attach {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 10px;
-}
-
-.thumb {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.fileicon {
-  width: 28px;
-  text-align: center;
-  font-size: 22px;
-  color: var(--faded);
-}
-
-.attname {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 12px;
-  color: var(--ink);
-}
-
-.attmeta {
-  color: var(--faded);
-}
-
-.x {
-  padding: 0 4px;
-  border: none;
-  background: transparent;
-  color: var(--faded);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.x:hover {
-  color: var(--ink);
-}
-
+/* header */
 .mark {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+.brandcluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.headctl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.histpos {
+  margin-right: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--faded);
 }
 
 .brand {
@@ -150,15 +121,12 @@ body {
   background: var(--faded);
   transition: background 0.3s ease;
 }
-
 .dot[data-online="true"] {
   background: var(--ok);
 }
-
 .dot[data-busy="true"] {
   animation: pulse 1s ease-in-out infinite;
 }
-
 @keyframes pulse {
   0%,
   100% {
@@ -170,11 +138,48 @@ body {
 }
 
 .prov {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   color: var(--faded);
 }
 
+/* ghost icon button */
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--faded);
+  cursor: pointer;
+  transition:
+    color 120ms ease-out,
+    background 120ms ease-out;
+}
+.iconbtn svg {
+  width: 20px;
+  height: 20px;
+}
+.iconbtn:hover {
+  color: var(--navy);
+  background: rgba(40, 73, 129, 0.08);
+}
+.iconbtn:focus-visible {
+  outline: 2px solid rgba(40, 73, 129, 0.4);
+  outline-offset: 1px;
+}
+.iconbtn .ok {
+  color: var(--ok);
+}
+
+/* prompt */
 .input {
   width: 100%;
   border: none;
@@ -186,85 +191,57 @@ body {
   font-size: 18px;
   line-height: 1.5;
 }
-
 .input::placeholder {
   color: var(--faded);
 }
 
 .hint {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   line-height: 1.5;
   color: var(--faded);
 }
-
-.hint code {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-
 .hint.err {
   color: var(--alert);
 }
 
-.result {
-  display: flex;
-  flex-direction: column;
-}
-
-.summary {
-  margin: 0 0 10px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
-  color: var(--faded);
-}
-
-.summary strong {
-  color: var(--ink);
-}
-
-.actions {
-  float: right;
-  display: inline-flex;
-  gap: 8px;
-}
-
-.tinybtn {
-  padding: 3px 8px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--faded);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 10px;
-  cursor: pointer;
-}
-
-.tinybtn:hover {
-  color: var(--ink);
-  background: rgba(0, 0, 0, 0.09);
-}
-
+/* reading view (committed text → judged → trimmed) */
 .reading {
-  max-height: 48vh;
+  position: relative;
+  max-height: 46vh;
   overflow-y: auto;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
   font-size: 18px;
   line-height: 1.5;
 }
-
 .reading.expanded {
-  max-height: 78vh;
+  max-height: 76vh;
 }
 
-/* inline markdown inside blocks */
+.block {
+  margin: 0 0 4px;
+  color: var(--ink);
+  transition:
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.block.filler {
+  color: var(--faded);
+  opacity: 0.5;
+}
+.blank {
+  height: 12px;
+}
+
+/* inline markdown */
 .reading a {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-
 .reading code {
   padding: 1px 5px;
   border-radius: 4px;
@@ -272,43 +249,113 @@ body {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.85em;
 }
-
 .reading strong {
   font-weight: 700;
 }
-
 .reading em {
   font-style: italic;
 }
 
-.reading p {
-  margin: 0 0 4px;
+/* judging scan — a soft band sweeping down the committed text */
+.scan-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2.4em;
+  top: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(40, 73, 129, 0.1),
+    transparent
+  );
+  animation: scan 1100ms ease-in-out infinite;
+}
+@keyframes scan {
+  0% {
+    top: -12%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan-band {
+    display: none;
+  }
+  .block {
+    transition: none;
+  }
 }
 
-.keep {
-  color: var(--ink);
+/* verdict + controls row */
+.resultbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
 }
-
-.fade {
-  color: var(--faded);
-}
-
-.blank {
-  height: 12px;
-}
-
-.ghost {
-  align-self: flex-start;
-  margin-top: 12px;
-  padding: 4px 0;
-  border: none;
-  background: transparent;
-  color: var(--faded);
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
-  cursor: pointer;
+  letter-spacing: 0.03em;
+  color: var(--faded);
+}
+.vcheck {
+  width: 14px;
+  height: 14px;
+  color: var(--ok);
+}
+.rctl {
+  display: inline-flex;
+  gap: 2px;
 }
 
-.ghost:hover {
+/* attachment chip */
+.attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 8px 8px 8px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+}
+.thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.fileicon {
+  width: 28px;
+  text-align: center;
+  font-size: 22px;
+  color: var(--faded);
+}
+.attname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
   color: var(--ink);
+}
+.attmeta {
+  color: var(--faded);
 }

@@ -1,23 +1,35 @@
 {
   "status": {
     "wiggling": "wiggling…",
+    "judging": "判定中…",
     "waiting": "モデルを待機中"
   },
   "placeholder": {
-    "default": "スレッドを貼る、スクリーンショットを落とす、入力…  ⏎ でwiggle",
+    "default": "スレッドを貼り付け、スクリーンショットをドロップ、入力…  ⏎ で wiggle",
     "drop": "ドロップしてください —"
   },
   "hint": {
-    "noProvider": "モデルはまだありません。maximal (localhost:4141) または Ollama を起動してください — Wiggle が自動的に接続します。"
+    "noProvider": "モデルがまだありません。maximal (localhost:4141) または Ollama を起動してください — Wiggle が自動で接続します。"
   },
-  "summary": "{{total}} 件中 {{kept}} 件を保持",
+  "verdict": {
+    "trimmed": "{{filler}} を削除 (全体 {{total}} · {{kept}} は重要)",
+    "allKept": "削除するものなし — すべて重要です",
+    "allFiller": "すべて不要 — ここに重要な部分はありません"
+  },
+  "history": {
+    "position": "履歴 · {{pos}} / {{total}}"
+  },
   "action": {
-    "copyKept": "保持をコピー",
+    "copy": "重要な部分をコピー",
+    "copied": "コピーしました",
     "expand": "展開",
     "collapse": "折りたたむ",
-    "new": "← 新規",
+    "new": "やり直す",
     "open": "開く",
-    "reveal": "表示"
+    "reveal": "Finder で表示",
+    "remove": "削除",
+    "dismiss": "閉じる",
+    "settings": "設定"
   },
   "tray": {
     "summon": "Wiggle を起動",
