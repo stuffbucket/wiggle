@@ -40,8 +40,10 @@ pub fn install(window: &WebviewWindow) -> Result<(), String> {
     Ok(())
 }
 
-/// Show the overlay: size it to cover the screen under the cursor, order it
-/// front, and make it key so the input can receive keystrokes.
+/// Show the overlay: size it to cover the screen under the cursor, bring the
+/// app forward so the panel is reliably key (its webview receives clicks —
+/// otherwise a non-activating panel from an inactive accessory app resigns key
+/// after a beat and swallows the first click), and make it key.
 pub fn summon(app: &AppHandle) -> Result<(), String> {
     let mtm = objc2_foundation::MainThreadMarker::new()
         .ok_or("summon must run on the main thread")?;
@@ -55,6 +57,13 @@ pub fn summon(app: &AppHandle) -> Result<(), String> {
     unsafe {
         let _: () = objc2::msg_send![ns_panel, setFrame: frame, display: true];
     }
+
+    // Front the accessory app (no Dock icon) so the panel holds key focus while
+    // the user types and clicks. Focus returns to the previous app on dismiss.
+    let ns_app = objc2_app_kit::NSApplication::sharedApplication(mtm);
+    #[allow(deprecated)]
+    ns_app.activateIgnoringOtherApps(true);
+
     panel.show_and_make_key();
     Ok(())
 }

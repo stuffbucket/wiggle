@@ -16,8 +16,11 @@ use serde::Serialize;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Manager,
+    AppHandle, Emitter,
 };
+// Only the Windows/Linux fallback reaches for get_webview_window via Manager.
+#[cfg(not(target_os = "macos"))]
+use tauri::Manager;
 
 use engine::WiggleBlock;
 use settings::Settings;
@@ -302,7 +305,7 @@ pub fn run() {
             // "waiting for a model" card lights up the moment a backend appears.
             let poll_handle = handle.clone();
             tauri::async_runtime::spawn(async move {
-                let mut last: Option<bool> = None;
+                let mut last: Option<bool> = Some(false);
                 loop {
                     let status = ProviderStatus::probe().await;
                     if last != Some(status.online) {
@@ -314,14 +317,6 @@ pub fn run() {
             });
 
             Ok(())
-        })
-        .on_window_event(|window, event| {
-            // Blur-to-hide: the overlay disappears when the user clicks away.
-            if let tauri::WindowEvent::Focused(false) = event {
-                if window.label() == "main" {
-                    hide_overlay(window.app_handle());
-                }
-            }
         })
         .invoke_handler(tauri::generate_handler![
             wiggle,

@@ -1,9 +1,13 @@
 :root {
   --paper: #f5f3f0;
-  --ink: #1a1a1a;
-  --faded: #b9b4ac;
-  --navy: #284981;
-  --rule: #e2ded7;
+  --ink: #1a1a1a; /* kept/body text — 15.7:1 */
+  --filler: #8a857e; /* filler text, dimmed but legible — 3.3:1 */
+  --label: #6b655d; /* mono secondary labels — 5.2:1 */
+  --placeholder: #928d86; /* input placeholder — 3.0:1 */
+  --icon: #78726a; /* icon button at rest — 4.3:1 */
+  --navy: #284981; /* accent: hover/active/focus/links — 8.0:1 */
+  --navy-press: #1a2f54;
+  --hairline: rgba(26, 26, 26, 0.08);
   --alert: #b4593f;
   --ok: #3a9b6e;
   font-synthesis: none;
@@ -40,19 +44,21 @@ body {
   cursor: default;
 }
 
+/* Solid paper card — no backdrop-filter, so it never recomposites / shifts
+   transparency, and the measured contrast ratios hold at runtime. */
 .card {
+  display: flex;
+  flex-direction: column;
   width: min(640px, 92vw);
   padding: 16px 20px 14px;
   color: var(--ink);
-  background: rgba(245, 243, 240, 0.86);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
   border-top: 1px solid var(--navy);
   border-radius: 16px;
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.28),
-    0 2px 8px rgba(0, 0, 0, 0.12);
+    0 16px 50px rgba(26, 26, 26, 0.22),
+    0 2px 8px rgba(26, 26, 26, 0.1);
   animation: rise 160ms ease;
 }
 
@@ -60,9 +66,9 @@ body {
   border-color: rgba(40, 73, 129, 0.4);
 }
 
-/* Viewing history (not the live draft) → dashed, faded top hairline. */
+/* Viewing history (not the live draft) → dashed top hairline. */
 .card.history {
-  border-top: 1px dashed var(--faded);
+  border-top: 1px dashed var(--label);
 }
 
 @keyframes rise {
@@ -82,7 +88,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .brandcluster {
@@ -103,7 +109,7 @@ body {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--faded);
+  color: var(--label);
 }
 
 .brand {
@@ -118,7 +124,7 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--faded);
+  background: var(--label);
   transition: background 0.3s ease;
 }
 .dot[data-online="true"] {
@@ -143,79 +149,58 @@ body {
   text-overflow: ellipsis;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
-  color: var(--faded);
+  color: var(--label);
 }
 
-/* ghost icon button */
+/* ghost icon button — reads as a control at rest, navy on interaction */
 .iconbtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
+  padding: 5px;
+  border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
-  color: var(--faded);
+  color: var(--icon);
   cursor: pointer;
   transition:
     color 120ms ease-out,
-    background 120ms ease-out;
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
 }
 .iconbtn svg {
   width: 20px;
   height: 20px;
+  display: block;
 }
 .iconbtn:hover {
   color: var(--navy);
   background: rgba(40, 73, 129, 0.08);
+  border-color: rgba(40, 73, 129, 0.14);
 }
 .iconbtn:focus-visible {
-  outline: 2px solid rgba(40, 73, 129, 0.4);
-  outline-offset: 1px;
+  outline: none;
+  color: var(--navy);
+  border-color: var(--navy);
+}
+.iconbtn:active {
+  color: var(--navy-press);
+  background: rgba(40, 73, 129, 0.14);
 }
 .iconbtn .ok {
   color: var(--ok);
 }
 
-/* prompt */
-.input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  resize: none;
-  color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 18px;
-  line-height: 1.5;
-}
-.input::placeholder {
-  color: var(--faded);
-}
-
-.hint {
-  margin: 8px 0 0;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--faded);
-}
-.hint.err {
-  color: var(--alert);
-}
-
-/* reading view (committed text → judged → trimmed) */
+/* result / reading view (above the input) */
 .reading {
   position: relative;
   max-height: 46vh;
   overflow-y: auto;
-  margin-top: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--rule);
+  margin-bottom: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
   font-size: 18px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .reading.expanded {
   max-height: 76vh;
@@ -225,12 +210,10 @@ body {
   margin: 0 0 4px;
   color: var(--ink);
   transition:
-    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .block.filler {
-  color: var(--faded);
-  opacity: 0.5;
+  color: var(--filler);
 }
 .blank {
   height: 12px;
@@ -238,14 +221,14 @@ body {
 
 /* inline markdown */
 .reading a {
-  color: inherit;
+  color: var(--navy);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 .reading code {
   padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(26, 26, 26, 0.06);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.85em;
 }
@@ -267,7 +250,7 @@ body {
   background: linear-gradient(
     180deg,
     transparent,
-    rgba(40, 73, 129, 0.1),
+    rgba(40, 73, 129, 0.12),
     transparent
   );
   animation: scan 1100ms ease-in-out infinite;
@@ -297,13 +280,13 @@ body {
   }
 }
 
-/* verdict + controls row */
+/* verdict + controls row — sits with the result, above the input */
 .resultbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 10px;
+  margin: 8px 0 2px;
 }
 .verdict {
   display: inline-flex;
@@ -312,7 +295,7 @@ body {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   letter-spacing: 0.03em;
-  color: var(--faded);
+  color: var(--label);
 }
 .vcheck {
   width: 14px;
@@ -329,9 +312,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 4px 0 8px;
+  margin: 6px 0 8px;
   padding: 8px 8px 8px 10px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(26, 26, 26, 0.04);
   border-radius: 10px;
 }
 .thumb {
@@ -344,7 +327,7 @@ body {
   width: 28px;
   text-align: center;
   font-size: 22px;
-  color: var(--faded);
+  color: var(--icon);
 }
 .attname {
   flex: 1;
@@ -357,5 +340,37 @@ body {
   color: var(--ink);
 }
 .attmeta {
-  color: var(--faded);
+  color: var(--label);
+}
+
+/* prompt — pinned at the bottom of the card */
+.input {
+  order: 99;
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 12px;
+  border: none;
+  border-top: 1px solid var(--hairline);
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.hint {
+  order: 98;
+  margin: 8px 0 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--label);
+}
+.hint.err {
+  color: var(--alert);
 }

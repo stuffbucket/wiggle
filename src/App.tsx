@@ -514,67 +514,6 @@ function App() {
           </div>
         </header>
 
-        {attachment && (
-          <div className="attach">
-            {attachment.kind === "image" ? (
-              <img
-                className="thumb"
-                src={`data:${attachment.mediaType};base64,${attachment.base64}`}
-                alt={attachment.name}
-              />
-            ) : (
-              <span className="fileicon">▤</span>
-            )}
-            <span className="attname">
-              {attachment.name}
-              {attachment.kind === "file" && (
-                <span className="attmeta"> · {humanSize(attachment.size)}</span>
-              )}
-            </span>
-            {attachment.kind === "file" && (
-              <>
-                <IconButton
-                  label={t("action.open")}
-                  onClick={() => openPath(attachment.path).catch(() => {})}
-                >
-                  <Open20Regular />
-                </IconButton>
-                <IconButton
-                  label={t("action.reveal")}
-                  onClick={() =>
-                    revealItemInDir(attachment.path).catch(() => {})
-                  }
-                >
-                  <OpenFolder20Regular />
-                </IconButton>
-              </>
-            )}
-            <IconButton
-              label={t("action.remove")}
-              onClick={() => setAttachment(null)}
-            >
-              <Dismiss20Regular />
-            </IconButton>
-          </div>
-        )}
-
-        <textarea
-          ref={inputRef}
-          className="input"
-          value={text}
-          onChange={onChange}
-          onKeyDown={onInputKey}
-          placeholder={
-            dragging ? t("placeholder.drop") : t("placeholder.default")
-          }
-          spellCheck={false}
-          autoFocus
-          rows={phase === "idle" ? 3 : 1}
-        />
-
-        {error === "no-provider" && <p className="hint">{t("hint.noProvider")}</p>}
-        {error && error !== "no-provider" && <p className="hint err">{error}</p>}
-
         {phase !== "idle" && (
           <div className={`reading${expanded ? " expanded" : ""}`}>
             {phase === "judging" && <div className="scan-band" aria-hidden />}
@@ -637,6 +576,67 @@ function App() {
             </span>
           </div>
         )}
+
+        {attachment && (
+          <div className="attach">
+            {attachment.kind === "image" ? (
+              <img
+                className="thumb"
+                src={`data:${attachment.mediaType};base64,${attachment.base64}`}
+                alt={attachment.name}
+              />
+            ) : (
+              <span className="fileicon">▤</span>
+            )}
+            <span className="attname">
+              {attachment.name}
+              {attachment.kind === "file" && (
+                <span className="attmeta"> · {humanSize(attachment.size)}</span>
+              )}
+            </span>
+            {attachment.kind === "file" && (
+              <>
+                <IconButton
+                  label={t("action.open")}
+                  onClick={() => openPath(attachment.path).catch(() => {})}
+                >
+                  <Open20Regular />
+                </IconButton>
+                <IconButton
+                  label={t("action.reveal")}
+                  onClick={() =>
+                    revealItemInDir(attachment.path).catch(() => {})
+                  }
+                >
+                  <OpenFolder20Regular />
+                </IconButton>
+              </>
+            )}
+            <IconButton
+              label={t("action.remove")}
+              onClick={() => setAttachment(null)}
+            >
+              <Dismiss20Regular />
+            </IconButton>
+          </div>
+        )}
+
+        {error === "no-provider" && <p className="hint">{t("hint.noProvider")}</p>}
+        {error && error !== "no-provider" && <p className="hint err">{error}</p>}
+
+        <textarea
+          ref={inputRef}
+          className="input"
+          value={text}
+          onChange={onChange}
+          onKeyDown={onInputKey}
+          placeholder={
+            dragging ? t("placeholder.drop") : t("placeholder.default")
+          }
+          spellCheck={false}
+          autoFocus
+          rows={phase === "idle" ? 3 : 1}
+        />
       </div>
     </div>
   );
