@@ -99,6 +99,14 @@ fn get_config() -> Config {
     }
 }
 
+/// Absolute path to settings.json (created with defaults if missing) so the UI
+/// can open it in the user's editor.
+#[tauri::command]
+fn settings_path() -> String {
+    Settings::ensure_on_disk();
+    settings::config_path().to_string_lossy().to_string()
+}
+
 /// Hide the overlay (Esc / scrim click from the webview).
 #[tauri::command]
 fn dismiss(app: AppHandle) {
@@ -191,13 +199,15 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let quit_i = MenuItem::with_id(app, "quit", "Quit Wiggle", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&summon_i, &update_i, &quit_i])?;
 
-    let icon = app
-        .default_window_icon()
-        .cloned()
-        .expect("bundled default window icon");
+    // Dedicated monochrome template glyph (system tints it for light/dark/active),
+    // not the full-color app icon.
+    let tray_icon = tauri::image::Image::from_bytes(include_bytes!(
+        "../icons/tray/wiggleTemplate.png"
+    ))
+    .expect("bundled tray template icon");
 
     TrayIconBuilder::with_id("wiggle-tray")
-        .icon(icon)
+        .icon(tray_icon)
         .icon_as_template(true)
         .tooltip("Wiggle")
         .menu(&menu)
@@ -319,6 +329,7 @@ pub fn run() {
             ingest_path,
             provider_status,
             get_config,
+            settings_path,
             dismiss,
             summon,
             set_tray_labels
