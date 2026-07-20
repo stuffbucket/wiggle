@@ -3,7 +3,8 @@
   --ink: #1a1a1a;
   --faded: #b9b4ac;
   --rule: #e2ded7;
-  --accent: #1a1a1a;
+  --alert: #b4593f;
+  --ok: #3a9b6e;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,113 +19,144 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  /* The window is a transparent full-screen panel; the scrim provides the dim. */
+  background: transparent;
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  overflow: hidden;
 }
 
-.app {
-  height: 100%;
+/* Full-screen dim; clicking it dismisses the overlay. */
+.scrim {
+  height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 28px 40px 40px;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 11vh;
+  cursor: default;
 }
 
-.topbar {
+/* The summon card, near the bottom-center of the focused monitor. */
+.card {
+  width: min(640px, 92vw);
+  padding: 18px 20px 16px;
+  color: var(--ink);
+  background: rgba(245, 243, 240, 0.86);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+  animation: rise 160ms ease;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mark {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--rule);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .brand {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 13px;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+  color: var(--ink);
 }
 
-.tag {
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faded);
+  transition: background 0.3s ease;
+}
+
+.dot[data-online="true"] {
+  background: var(--ok);
+}
+
+.dot[data-busy="true"] {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.prov {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--faded);
 }
 
-.editor,
-.result {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding-top: 22px;
-}
-
-textarea {
-  flex: 1;
+.input {
   width: 100%;
-  resize: none;
   border: none;
   outline: none;
   background: transparent;
+  resize: none;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 19px;
-  line-height: 1.55;
+  font-size: 18px;
+  line-height: 1.5;
 }
 
-textarea::placeholder {
+.input::placeholder {
   color: var(--faded);
 }
 
-button {
-  cursor: pointer;
-  font: inherit;
-  border-radius: 8px;
-  transition: opacity 0.15s ease;
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.primary {
-  align-self: flex-start;
-  margin-top: 18px;
-  padding: 10px 22px;
-  border: none;
-  background: var(--accent);
-  color: var(--paper);
+.hint {
+  margin: 10px 0 0;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-}
-
-.ghost {
-  align-self: flex-start;
-  margin-top: 20px;
-  padding: 8px 0;
-  border: none;
-  background: transparent;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--faded);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 12px;
 }
 
-.ghost:hover {
-  color: var(--ink);
+.hint code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.hint.err {
+  color: var(--alert);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
 }
 
 .summary {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--faded);
 }
 
@@ -133,15 +165,14 @@ button:disabled {
 }
 
 .reading {
-  flex: 1;
+  max-height: 48vh;
   overflow-y: auto;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.5;
 }
 
 .reading p {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .keep {
@@ -153,5 +184,21 @@ button:disabled {
 }
 
 .blank {
-  height: 14px;
+  height: 12px;
+}
+
+.ghost {
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--faded);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ghost:hover {
+  color: var(--ink);
 }

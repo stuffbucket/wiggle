@@ -1,63 +1,231 @@
+//! Wiggle — a menubar app that keeps only what won't budge.
+//!
+//! Rust owns the app: the tray, the summon hotkey, the native overlay panel, and
+//! the wiggle engine that talks to a local model provider. The webview is one
+//! transparent card rendered inside the overlay.
+
+mod engine;
+mod ingest;
+mod provider;
+mod settings;
+
+#[cfg(target_os = "macos")]
+mod macos;
+
 use serde::Serialize;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Manager,
+};
 
-/// One line of the source text plus Wiggle's verdict on it.
-#[derive(Serialize)]
-struct Line {
-    /// Zero-based index of this line in the original text.
-    index: usize,
-    /// The line's text, verbatim.
-    text: String,
-    /// True when Wiggle judges this line would change what you do.
-    matters: bool,
+use engine::WiggleBlock;
+use settings::Settings;
+
+/// What the UI needs to know about the model backend.
+#[derive(Debug, Clone, Serialize)]
+struct ProviderStatus {
+    online: bool,
+    provider: String,
+    model: String,
 }
 
-/// Analyze a passage and decide, line by line, what actually matters.
-///
-/// This is the heart of Wiggle: for each line it asks "would this change what
-/// you do?" — keep it if yes, gray it out if no.
-///
-/// For now this is a deterministic placeholder heuristic so the app runs end to
-/// end. Swap the body of `line_matters` for a real model call (see the Anthropic
-/// SDK / `reqwest` to an LLM) when wiring up the actual intelligence.
-#[tauri::command]
-fn wiggle(text: &str) -> Vec<Line> {
-    text.lines()
-        .enumerate()
-        .map(|(index, raw)| Line {
-            index,
-            text: raw.to_string(),
-            matters: line_matters(raw),
-        })
-        .collect()
-}
-
-/// Placeholder for the model. Flags a line as "matters" when it carries the
-/// kind of signal a human would act on — a decision, a deadline, a number, a
-/// name, an ask. Real Wiggle replaces this with an AI that twists the meaning
-/// and tests whether it changes your next move.
-fn line_matters(line: &str) -> bool {
-    let trimmed = line.trim();
-    if trimmed.is_empty() {
-        return false;
+impl ProviderStatus {
+    async fn probe() -> ProviderStatus {
+        let settings = Settings::load();
+        match provider::discover(&settings).await {
+            Some(p) => ProviderStatus {
+                online: true,
+                provider: p.kind.label().to_string(),
+                model: p.model,
+            },
+            None => ProviderStatus {
+                online: false,
+                provider: String::new(),
+                model: String::new(),
+            },
+        }
     }
-
-    const SIGNALS: [&str; 14] = [
-        "must", "need", "deadline", "by ", "due", "decision", "decide", "action",
-        "blocker", "risk", "approve", "ship", "@", "?",
-    ];
-
-    let lower = trimmed.to_lowercase();
-    let has_signal = SIGNALS.iter().any(|s| lower.contains(s));
-    let has_number = trimmed.chars().any(|c| c.is_ascii_digit());
-
-    has_signal || has_number
 }
+
+/// Config the webview reads once on load (dim opacity, locale).
+#[derive(Debug, Clone, Serialize)]
+struct Config {
+    dim: f64,
+    locale: String,
+}
+
+// ---- commands ---------------------------------------------------------------
+
+/// Wiggle a passage of text: keep the blocks that matter, fade the filler.
+#[tauri::command]
+async fn wiggle(text: String) -> Result<Vec<WiggleBlock>, String> {
+    let settings = Settings::load();
+    match provider::discover(&settings).await {
+        Some(p) => engine::wiggle_text(&p, &text).await,
+        None => Err("no-provider".into()),
+    }
+}
+
+/// Current model-provider status (which local backend, if any, is reachable).
+#[tauri::command]
+async fn provider_status() -> ProviderStatus {
+    ProviderStatus::probe().await
+}
+
+/// UI config from settings.json.
+#[tauri::command]
+fn get_config() -> Config {
+    let s = Settings::load();
+    Config {
+        dim: s.dim,
+        locale: s.locale,
+    }
+}
+
+/// Hide the overlay (Esc / scrim click from the webview).
+#[tauri::command]
+fn dismiss(app: AppHandle) {
+    hide_overlay(&app);
+}
+
+/// Show the overlay (callable from the UI; the tray and hotkey use it too).
+#[tauri::command]
+fn summon(app: AppHandle) -> Result<(), String> {
+    summon_overlay(&app)
+}
+
+// ---- overlay helpers (platform-dispatched) ----------------------------------
+
+fn summon_overlay(app: &AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        macos::summon(app)?;
+        let _ = app.emit("wiggle://summon", ());
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.show();
+            let _ = w.set_focus();
+            let _ = app.emit("wiggle://summon", ());
+        }
+        Ok(())
+    }
+}
+
+fn hide_overlay(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    {
+        macos::dismiss(app);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.hide();
+        }
+    }
+}
+
+// ---- tray -------------------------------------------------------------------
+
+fn build_tray(app: &AppHandle) -> tauri::Result<()> {
+    let summon_i = MenuItem::with_id(app, "summon", "Summon Wiggle", true, None::<&str>)?;
+    let quit_i = MenuItem::with_id(app, "quit", "Quit Wiggle", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&summon_i, &quit_i])?;
+
+    let icon = app
+        .default_window_icon()
+        .cloned()
+        .expect("bundled default window icon");
+
+    TrayIconBuilder::with_id("wiggle-tray")
+        .icon(icon)
+        .icon_as_template(true)
+        .tooltip("Wiggle")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "summon" => {
+                let _ = summon_overlay(app);
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let _ = summon_overlay(tray.app_handle());
+            }
+        })
+        .build(app)?;
+    Ok(())
+}
+
+// ---- entry ------------------------------------------------------------------
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![wiggle])
+    // Give users a documented settings.json to edit on first launch.
+    Settings::ensure_on_disk();
+
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_opener::init());
+
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.plugin(tauri_nspanel::init());
+    }
+
+    builder
+        .setup(|app| {
+            let handle = app.handle();
+            build_tray(handle)?;
+
+            #[cfg(target_os = "macos")]
+            {
+                let window_ms = Settings::load().hotkey.window_ms;
+                if let Err(e) = macos::setup(handle, window_ms) {
+                    eprintln!("wiggle: overlay setup failed: {e}");
+                }
+            }
+
+            // Background poller: keep the UI's provider status fresh so a
+            // "waiting for a model" card lights up the moment a backend appears.
+            let poll_handle = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                let mut last: Option<bool> = None;
+                loop {
+                    let status = ProviderStatus::probe().await;
+                    if last != Some(status.online) {
+                        last = Some(status.online);
+                        let _ = poll_handle.emit("wiggle://provider", status);
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                }
+            });
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Blur-to-hide: the overlay disappears when the user clicks away.
+            if let tauri::WindowEvent::Focused(false) = event {
+                if window.label() == "main" {
+                    hide_overlay(window.app_handle());
+                }
+            }
+        })
+        .invoke_handler(tauri::generate_handler![
+            wiggle,
+            provider_status,
+            get_config,
+            dismiss,
+            summon
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
