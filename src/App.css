@@ -1,0 +1,157 @@
+:root {
+  --paper: #f5f3f0;
+  --ink: #1a1a1a;
+  --faded: #b9b4ac;
+  --rule: #e2ded7;
+  --accent: #1a1a1a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 40px 40px;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.tag {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--faded);
+}
+
+.editor,
+.result {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 22px;
+}
+
+textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+textarea::placeholder {
+  color: var(--faded);
+}
+
+button {
+  cursor: pointer;
+  font: inherit;
+  border-radius: 8px;
+  transition: opacity 0.15s ease;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.primary {
+  align-self: flex-start;
+  margin-top: 18px;
+  padding: 10px 22px;
+  border: none;
+  background: var(--accent);
+  color: var(--paper);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.ghost {
+  align-self: flex-start;
+  margin-top: 20px;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--faded);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+.ghost:hover {
+  color: var(--ink);
+}
+
+.summary {
+  margin: 0 0 18px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--faded);
+}
+
+.summary strong {
+  color: var(--ink);
+}
+
+.reading {
+  flex: 1;
+  overflow-y: auto;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.reading p {
+  margin: 0 0 6px;
+}
+
+.keep {
+  color: var(--ink);
+}
+
+.fade {
+  color: var(--faded);
+}
+
+.blank {
+  height: 14px;
+}
