@@ -67,6 +67,22 @@ async fn wiggle(text: String) -> Result<Vec<WiggleBlock>, String> {
     }
 }
 
+/// Wiggle an image (dropped/pasted screenshot) via the provider's vision path.
+#[tauri::command]
+async fn wiggle_image(mime: String, data: String) -> Result<Vec<WiggleBlock>, String> {
+    let settings = Settings::load();
+    match provider::discover(&settings).await {
+        Some(p) => engine::wiggle_image(&p, &mime, &data).await,
+        None => Err("no-provider".into()),
+    }
+}
+
+/// Read and classify a dropped file path (text / image / other).
+#[tauri::command]
+fn ingest_path(path: String) -> Result<ingest::Ingested, String> {
+    ingest::ingest_path(&path)
+}
+
 /// Current model-provider status (which local backend, if any, is reachable).
 #[tauri::command]
 async fn provider_status() -> ProviderStatus {
@@ -221,6 +237,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             wiggle,
+            wiggle_image,
+            ingest_path,
             provider_status,
             get_config,
             dismiss,
