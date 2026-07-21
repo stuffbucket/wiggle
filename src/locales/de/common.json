@@ -5,26 +5,27 @@
     "waiting": "wartet auf ein Modell"
   },
   "placeholder": {
-    "default": "Thread einfügen, Screenshot ablegen, tippen…  ⏎ zum Wackeln",
+    "default": "Einfügen, Bild ablegen oder tippen — ⏎ zum Wackeln",
     "drop": "ablegen —"
   },
   "hint": {
-    "noProvider": "Noch kein Modell. Starte maximal (localhost:4141) oder Ollama — Wiggle verbindet sich automatisch."
+    "noProvider": "Noch kein Modell. Starten Sie maximal (localhost:4141) oder Ollama — Wiggle verbindet sich von selbst."
   },
   "verdict": {
-    "trimmed": "gekürzt {{filler}} von {{total}} · {{kept}} essentiell",
-    "allKept": "nichts zum Kürzen — alles ist essentiell",
-    "allFiller": "alles Füllstoff — nichts Essentielles hier"
+    "trimmed": "{{filler}} von {{total}} gekürzt · {{kept}} tragend",
+    "allKept": "nichts zu kürzen — alles ist tragend",
+    "allFiller": "nur Füllstoff — nichts Tragendes hier"
   },
   "history": {
-    "position": "verlauf · {{pos}} von {{total}}"
+    "position": "Chronik · {{pos}} von {{total}}"
   },
   "action": {
-    "copy": "essentiell kopieren",
+    "copy": "tragend kopieren",
     "copied": "kopiert",
+    "attach": "Bild oder Datei anhängen",
     "expand": "erweitern",
     "collapse": "einklappen",
-    "new": "neu beginnen",
+    "new": "neu starten",
     "open": "öffnen",
     "reveal": "im Finder anzeigen",
     "remove": "entfernen",
@@ -32,7 +33,7 @@
     "settings": "einstellungen"
   },
   "tray": {
-    "summon": "Wiggle herbeirufen",
+    "summon": "Wiggle aufrufen",
     "checkUpdates": "Nach Updates suchen…",
     "quit": "Wiggle beenden"
   }

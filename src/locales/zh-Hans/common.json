@@ -1,27 +1,28 @@
 {
   "status": {
     "wiggling": "wiggling…",
-    "judging": "判断中…",
+    "judging": "评估中…",
     "waiting": "等待模型"
   },
   "placeholder": {
-    "default": "粘贴帖子、拖拽截图、输入…  ⏎ 来 wiggle",
-    "drop": "放在这里 —"
+    "default": "粘贴、拖入图像或输入 — ⏎ 来 wiggle",
+    "drop": "拖放 —"
   },
   "hint": {
-    "noProvider": "还没有模型。启动 maximal (localhost:4141) 或 Ollama — Wiggle 会自动连接。"
+    "noProvider": "还没有模型。启动 maximal (localhost:4141) 或 Ollama — Wiggle 自动连接。"
   },
   "verdict": {
-    "trimmed": "删除了 {{filler}} 个 (共 {{total}} 个 · {{kept}} 个必需)",
-    "allKept": "没有可删除的 — 全部必需",
-    "allFiller": "全是冗余 — 没有必需内容"
+    "trimmed": "删除了 {{total}} 中的 {{filler}} · {{kept}} 是核心",
+    "allKept": "无需删除 — 全部都是核心",
+    "allFiller": "全是填充 — 没有核心内容"
   },
   "history": {
     "position": "历史 · {{pos}} / {{total}}"
   },
   "action": {
-    "copy": "复制保留部分",
+    "copy": "复制核心",
     "copied": "已复制",
+    "attach": "附加图像或文件",
     "expand": "展开",
     "collapse": "折叠",
     "new": "重新开始",
@@ -32,7 +33,7 @@
     "settings": "设置"
   },
   "tray": {
-    "summon": "启动 Wiggle",
+    "summon": "召唤 Wiggle",
     "checkUpdates": "检查更新…",
     "quit": "退出 Wiggle"
   }

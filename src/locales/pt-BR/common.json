@@ -1,19 +1,19 @@
 {
   "status": {
-    "wiggling": "remexendo…",
+    "wiggling": "mexendo…",
     "judging": "avaliando…",
     "waiting": "aguardando um modelo"
   },
   "placeholder": {
-    "default": "Cole a thread, solte um print, digite…  ⏎ para remexer",
+    "default": "Cole, solte uma imagem ou digite — ⏎ para mecher",
     "drop": "solte aqui —"
   },
   "hint": {
     "noProvider": "Sem modelo ainda. Inicie maximal (localhost:4141) ou Ollama — Wiggle se conecta sozinho."
   },
   "verdict": {
-    "trimmed": "cortado {{filler}} de {{total}} · {{kept}} essencial",
-    "allKept": "nada a cortar — tudo é essencial",
+    "trimmed": "{{filler}} de {{total}} aparados · {{kept}} essencial",
+    "allKept": "nada a aparar — tudo é essencial",
     "allFiller": "só enchimento — nada essencial aqui"
   },
   "history": {
@@ -22,11 +22,12 @@
   "action": {
     "copy": "copiar essencial",
     "copied": "copiado",
+    "attach": "anexe uma imagem ou arquivo",
     "expand": "expandir",
     "collapse": "recolher",
     "new": "começar de novo",
     "open": "abrir",
-    "reveal": "mostrar no Finder",
+    "reveal": "revelar no Finder",
     "remove": "remover",
     "dismiss": "fechar",
     "settings": "configurações"
@@ -34,6 +35,6 @@
   "tray": {
     "summon": "Invocar Wiggle",
     "checkUpdates": "Verificar atualizações…",
-    "quit": "Sair de Wiggle"
+    "quit": "Sair do Wiggle"
   }
 }

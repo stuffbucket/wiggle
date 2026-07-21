@@ -1,32 +1,33 @@
 {
   "status": {
-    "wiggling": "remue…",
-    "judging": "évalue…",
+    "wiggling": "trémoussement…",
+    "judging": "évaluation…",
     "waiting": "en attente d'un modèle"
   },
   "placeholder": {
-    "default": "Colle le fil, lâche une capture, tape…  ⏎ pour remuer",
-    "drop": "lâche-le —"
+    "default": "Colle, dépose une image ou tape — ⏎ pour remuer",
+    "drop": "dépose-la —"
   },
   "hint": {
-    "noProvider": "Pas encore de modèle. Lance maximal (localhost:4141) ou Ollama — Wiggle se connecte tout seul."
+    "noProvider": "Pas de modèle encore. Lancez maximal (localhost:4141) ou Ollama — Wiggle se connecte tout seul."
   },
   "verdict": {
-    "trimmed": "raccourci {{filler}} sur {{total}} · {{kept}} essentiel",
-    "allKept": "rien à raccourcir — tout est essentiel",
-    "allFiller": "du remplissage — rien d'essentiel ici"
+    "trimmed": "{{filler}} sur {{total}} supprimés · {{kept}} porteur",
+    "allKept": "rien à supprimer — tout est porteur",
+    "allFiller": "que du remplissage — rien de porteur ici"
   },
   "history": {
     "position": "historique · {{pos}} sur {{total}}"
   },
   "action": {
-    "copy": "copier l'essentiel",
+    "copy": "copier le porteur",
     "copied": "copié",
+    "attach": "joindre une image ou fichier",
     "expand": "développer",
     "collapse": "réduire",
     "new": "recommencer",
     "open": "ouvrir",
-    "reveal": "révéler dans Finder",
+    "reveal": "afficher dans Finder",
     "remove": "supprimer",
     "dismiss": "fermer",
     "settings": "paramètres"

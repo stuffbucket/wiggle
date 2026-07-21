@@ -8,32 +8,31 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import {
-  ArrowCounterclockwise20Regular,
-  ArrowMaximize20Regular,
-  ArrowMinimize20Regular,
+  Attach20Regular,
   Checkmark20Filled,
   Copy20Regular,
   Dismiss20Regular,
   Open20Regular,
   OpenFolder20Regular,
-  Settings20Regular,
 } from "@fluentui/react-icons";
 import i18n, { normalizeLocale } from "./i18n";
 import {
   dismiss as dismissCmd,
   getConfig,
   ingestPath,
+  listModels,
   providerStatus,
+  setModel,
   setTrayLabels,
-  settingsPath,
   wiggleImage as wiggleImageCmd,
   wiggleText,
   type Block,
   type ProviderStatus,
 } from "./lib/client";
 import { abToBase64, humanSize } from "./lib/format";
-import { fillerDelays, wantsHistoryDown, wantsHistoryUp } from "./lib/history";
+import { wantsHistoryDown, wantsHistoryUp } from "./lib/history";
 import { IconButton } from "./lib/IconButton";
+import markUrl from "./assets/wiggle-mark.svg";
 import "./App.css";
 
 type Attachment =
@@ -52,7 +51,6 @@ type Phase = "idle" | "judging" | "result";
 const IDLE_MS = 90_000;
 const HISTORY_CAP = 25;
 
-// Render one block's text as inline markdown, opening links externally.
 const mdComponents = {
   p: (props: { children?: React.ReactNode }) => <>{props.children}</>,
   a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
@@ -80,6 +78,32 @@ function MdLine({ text }: { text: string }) {
   );
 }
 
+// Group consecutive same-verdict blocks into runs so kept runs can carry the
+// hanging signal-rule; blank lines break runs.
+type Run =
+  | { kind: "blank"; key: number }
+  | { kind: "run"; matters: boolean; items: Block[] };
+
+function groupRuns(blocks: Block[]): Run[] {
+  const out: Run[] = [];
+  for (const b of blocks) {
+    if (b.text.trim() === "") {
+      out.push({ kind: "blank", key: b.index });
+      continue;
+    }
+    const last = out[out.length - 1];
+    if (last && last.kind === "run" && last.matters === b.matters) {
+      last.items.push(b);
+    } else {
+      out.push({ kind: "run", matters: b.matters, items: [b] });
+    }
+  }
+  return out;
+}
+
+const shortModel = (m: string) =>
+  m.replace(/^claude-/, "").replace(/-\d{6,8}$/, "");
+
 function App() {
   const { t } = useTranslation();
   const [text, setText] = useState("");
@@ -92,22 +116,23 @@ function App() {
     provider: "",
     model: "",
   });
-  const [dim, setDim] = useState(0.18);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [models, setModels] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [entries, setEntries] = useState<Interaction[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const dirtyRef = useRef(false);
   const draftRef = useRef("");
   const lastSummonRef = useRef(Date.now());
   const programmaticRef = useRef(false);
   const idRef = useRef(0);
-  // Mirror state the once-registered summon listener needs to read.
   const liveRef = useRef({ blocks, committed, attachment });
   useEffect(() => {
     liveRef.current = { blocks, committed, attachment };
@@ -127,7 +152,6 @@ function App() {
     }, 0);
   }, []);
 
-  // Reset to a fresh (or restored-draft) live prompt.
   const resetToDraft = useCallback(
     (draft = "") => {
       programmaticRef.current = true;
@@ -137,7 +161,6 @@ function App() {
       setPhase("idle");
       setAttachment(null);
       setError(null);
-      setExpanded(false);
       setCursor(null);
       dirtyRef.current = false;
       focusInput(draft.length);
@@ -145,7 +168,6 @@ function App() {
     [focusInput],
   );
 
-  // Recall a past interaction: fill the prompt with its input, show its result.
   const loadInteraction = useCallback(
     (it: Interaction) => {
       programmaticRef.current = true;
@@ -155,18 +177,16 @@ function App() {
       setAttachment(it.attachment);
       setPhase("result");
       setError(null);
-      setExpanded(false);
       dirtyRef.current = false;
       focusInput(it.input.length);
     },
     [focusInput],
   );
 
-  // One-time: config, locale, tray labels, provider status.
+  // config + locale + tray + status
   useEffect(() => {
     getConfig()
       .then(async (c) => {
-        setDim(c.dim);
         let tag = c.locale;
         if (!tag || tag === "auto") {
           tag = (await osLocale().catch(() => null)) ?? "en";
@@ -182,15 +202,13 @@ function App() {
     providerStatus().then(setStatus).catch(() => {});
   }, []);
 
-  // Summon + provider events.
+  // summon + provider events
   useEffect(() => {
     const summon = listen("wiggle://summon", () => {
       const now = Date.now();
       const idle = now - lastSummonRef.current;
       lastSummonRef.current = now;
       const live = liveRef.current;
-      // If we've been away a while and a result is on screen, archive it and
-      // present a fresh prompt (the old output is stale). Otherwise keep working.
       if (live.blocks && idle >= IDLE_MS) {
         archive({
           id: idRef.current++,
@@ -216,19 +234,31 @@ function App() {
     dismissCmd().catch(() => {});
   }, []);
 
-  // Esc dismisses.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        dismiss();
+        if (pickerOpen) setPickerOpen(false);
+        else dismiss();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dismiss]);
+  }, [dismiss, pickerOpen]);
 
-  // Filler blocks fade in (staggered) after each result mounts.
+  // close the model menu on outside click
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [pickerOpen]);
+
+  // staggered filler reveal
   useEffect(() => {
     if (phase === "result" && blocks) {
       setRevealed(false);
@@ -238,61 +268,6 @@ function App() {
       return () => cancelAnimationFrame(id);
     }
   }, [phase, blocks]);
-
-  const runWiggle = useCallback(async () => {
-    if (phase === "judging") return;
-    const isImage = attachment?.kind === "image";
-    if (!isImage && !text.trim()) return;
-
-    // Archive the currently-shown interaction before starting a new one.
-    if (blocks) {
-      archive({
-        id: idRef.current++,
-        input: committed,
-        blocks,
-        attachment,
-      });
-    }
-
-    const shown = isImage ? "" : text;
-    programmaticRef.current = true;
-    setCommitted(shown);
-    setBlocks(null);
-    setPhase("judging");
-    setError(null);
-    setRevealed(false);
-    setCursor(null);
-    draftRef.current = "";
-    setText(""); // text commits to the reading view; prompt clears
-    dirtyRef.current = false;
-    setTimeout(() => (programmaticRef.current = false), 0);
-
-    try {
-      const res = isImage
-        ? await wiggleImageCmd(attachment.mediaType, attachment.base64)
-        : await wiggleText(shown);
-      setBlocks(res);
-      setPhase("result");
-      if (!isImage) setAttachment(null);
-    } catch (e) {
-      const msg = String(e);
-      setError(msg.includes("no-provider") ? "no-provider" : msg);
-      setPhase("idle");
-      setCommitted("");
-      if (!isImage) {
-        programmaticRef.current = true;
-        setText(shown); // restore so the user can retry
-        focusInput(shown.length);
-      }
-    }
-  }, [phase, attachment, text, blocks, committed, archive, focusInput]);
-
-  const startOver = useCallback(() => {
-    if (blocks) {
-      archive({ id: idRef.current++, input: committed, blocks, attachment });
-    }
-    resetToDraft("");
-  }, [blocks, committed, attachment, archive, resetToDraft]);
 
   const wiggleImage = useCallback(
     async (mediaType: string, base64: string) => {
@@ -324,7 +299,49 @@ function App() {
     [archive],
   );
 
-  // Drag & drop of files/screenshots.
+  const runWiggle = useCallback(async () => {
+    if (phase === "judging") return;
+    const isImage = attachment?.kind === "image";
+    if (!isImage && !text.trim()) return;
+
+    if (blocks) {
+      archive({ id: idRef.current++, input: committed, blocks, attachment });
+    }
+
+    const shown = isImage ? "" : text;
+    programmaticRef.current = true;
+    setCommitted(shown);
+    setBlocks(null);
+    setPhase("judging");
+    setError(null);
+    setRevealed(false);
+    setCursor(null);
+    draftRef.current = "";
+    setText("");
+    dirtyRef.current = false;
+    setTimeout(() => (programmaticRef.current = false), 0);
+
+    try {
+      const res = isImage
+        ? await wiggleImageCmd(attachment.mediaType, attachment.base64)
+        : await wiggleText(shown);
+      setBlocks(res);
+      setPhase("result");
+      if (!isImage) setAttachment(null);
+    } catch (e) {
+      const msg = String(e);
+      setError(msg.includes("no-provider") ? "no-provider" : msg);
+      setPhase("idle");
+      setCommitted("");
+      if (!isImage) {
+        programmaticRef.current = true;
+        setText(shown);
+        focusInput(shown.length);
+      }
+    }
+  }, [phase, attachment, text, blocks, committed, archive, focusInput]);
+
+  // drag & drop
   useEffect(() => {
     const un = getCurrentWebview().onDragDropEvent((event) => {
       if (event.payload.type === "over") {
@@ -361,7 +378,7 @@ function App() {
               });
             }
           } catch {
-            /* ignore unreadable drops */
+            /* ignore */
           }
         }
       })();
@@ -371,7 +388,7 @@ function App() {
     };
   }, [resetToDraft, wiggleImage]);
 
-  // Paste an image from the clipboard.
+  // paste image
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -450,24 +467,41 @@ function App() {
     setTimeout(() => setCopied(false), 1200);
   }, [blocks]);
 
-  const openSettings = useCallback(() => {
-    settingsPath()
-      .then((p) => openPath(p))
+  const openPicker = () => {
+    setPickerOpen((o) => !o);
+    if (models.length === 0) listModels().then(setModels).catch(() => {});
+  };
+  const chooseModel = (m: string) => {
+    setModel(m)
+      .then(() => setStatus((s) => ({ ...s, model: m })))
       .catch(() => {});
-  }, []);
+    setPickerOpen(false);
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!f) return;
+    if (f.type.startsWith("image/")) {
+      const b64 = abToBase64(await f.arrayBuffer());
+      setAttachment({
+        kind: "image",
+        name: f.name,
+        mediaType: f.type,
+        base64: b64,
+      });
+      wiggleImage(f.type, b64);
+    } else {
+      resetToDraft(await f.text());
+    }
+  };
 
   const nonBlank = (blocks ?? []).filter((b) => b.text.trim() !== "");
   const kept = nonBlank.filter((b) => b.matters).length;
   const total = nonBlank.length;
   const filler = total - kept;
-  const delays = blocks ? fillerDelays(blocks.map((b) => b.matters)) : [];
-
-  const statusText =
-    phase === "judging"
-      ? t("status.judging")
-      : status.online
-        ? `${status.provider} · ${status.model}`
-        : t("status.waiting");
+  const canSend =
+    phase !== "judging" && (attachment?.kind === "image" || text.trim() !== "");
 
   const verdictMsg =
     filler === 0
@@ -477,108 +511,92 @@ function App() {
         : t("verdict.trimmed", { filler, total, kept });
 
   return (
-    <div
-      className="scrim"
-      style={{ background: `rgba(18,16,14,${dim})` }}
-      onMouseDown={dismiss}
-    >
-      <div
-        className={`card${dragging ? " dragging" : ""}${cursor !== null ? " history" : ""}`}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="mark">
-          <div className="brandcluster">
-            <span className="brand">WIGGLE</span>
-            <span
-              className="dot"
-              data-online={status.online}
-              data-busy={phase === "judging"}
-            />
-            <span className="prov">{statusText}</span>
-          </div>
-          <div className="headctl">
-            {cursor !== null && (
-              <span className="histpos">
-                {t("history.position", {
-                  pos: cursor + 1,
-                  total: entries.length,
-                })}
+    <div className="scrim" onMouseDown={dismiss}>
+      <div className="card" onMouseDown={(e) => e.stopPropagation()}>
+        {/* input row */}
+        <div className={`inputrow${dragging ? " dragover" : ""}`}>
+          <img className="mark" src={markUrl} alt="Wiggle" />
+          <textarea
+            ref={inputRef}
+            className="input"
+            value={text}
+            onChange={onChange}
+            onKeyDown={onInputKey}
+            placeholder={
+              dragging ? t("placeholder.drop") : t("placeholder.default")
+            }
+            spellCheck={false}
+            autoFocus
+            rows={1}
+          />
+          {cursor !== null && (
+            <span className="histpos">
+              ‹ {cursor + 1}/{entries.length}
+            </span>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,text/*"
+            hidden
+            onChange={onFile}
+          />
+          <IconButton
+            label={t("action.attach")}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Attach20Regular />
+          </IconButton>
+          <div className="modelpick" ref={pickerRef}>
+            <button
+              className="modelbtn"
+              onClick={openPicker}
+              title={status.model}
+            >
+              <span
+                className="dot"
+                data-online={status.online}
+                data-busy={phase === "judging"}
+              />
+              <span className="name">
+                {status.model ? shortModel(status.model) : t("status.waiting")}
               </span>
-            )}
-            <IconButton label={t("action.settings")} onClick={openSettings}>
-              <Settings20Regular />
-            </IconButton>
-            <IconButton label={t("action.dismiss")} onClick={dismiss}>
-              <Dismiss20Regular />
-            </IconButton>
-          </div>
-        </header>
-
-        {phase !== "idle" && (
-          <div className={`reading${expanded ? " expanded" : ""}`}>
-            {phase === "judging" && <div className="scan-band" aria-hidden />}
-            {phase === "judging"
-              ? committed.split("\n").map((line, i) =>
-                  line.trim() === "" ? (
-                    <div key={i} className="blank" />
-                  ) : (
-                    <p key={i} className="block">
-                      <MdLine text={line} />
-                    </p>
-                  ),
-                )
-              : (blocks ?? []).map((b, i) =>
-                  b.text.trim() === "" ? (
-                    <div key={b.index} className="blank" />
-                  ) : (
-                    <p
-                      key={b.index}
-                      className={`block${b.matters ? "" : revealed ? " filler" : ""}`}
-                      style={
-                        b.matters
-                          ? undefined
-                          : { transitionDelay: `${delays[i] ?? 0}ms` }
-                      }
-                    >
-                      <MdLine text={b.text} />
-                    </p>
-                  ),
-                )}
-          </div>
-        )}
-
-        {phase === "result" && blocks && (
-          <div className="resultbar">
-            <span className="verdict">
-              {filler === 0 && <Checkmark20Filled className="vcheck" />}
-              {verdictMsg}
-            </span>
-            <span className="rctl">
-              <IconButton
-                label={copied ? t("action.copied") : t("action.copy")}
-                onClick={copyKept}
-              >
-                {copied ? (
-                  <Checkmark20Filled className="ok" />
+              <span aria-hidden>▾</span>
+            </button>
+            {pickerOpen && (
+              <div className="modelmenu">
+                {models.length === 0 ? (
+                  <div className="modelitem" aria-disabled>
+                    …
+                  </div>
                 ) : (
-                  <Copy20Regular />
+                  models.map((m) => (
+                    <button
+                      key={m}
+                      className="modelitem"
+                      data-sel={m === status.model}
+                      onClick={() => chooseModel(m)}
+                    >
+                      {shortModel(m)}
+                    </button>
+                  ))
                 )}
-              </IconButton>
-              <IconButton
-                label={expanded ? t("action.collapse") : t("action.expand")}
-                onClick={() => setExpanded((v) => !v)}
-              >
-                {expanded ? <ArrowMinimize20Regular /> : <ArrowMaximize20Regular />}
-              </IconButton>
-              <IconButton label={t("action.new")} onClick={startOver}>
-                <ArrowCounterclockwise20Regular />
-              </IconButton>
-            </span>
+              </div>
+            )}
           </div>
-        )}
+          <button
+            className="send"
+            onClick={runWiggle}
+            disabled={!canSend}
+            aria-label="Wiggle"
+            title="Wiggle (⏎)"
+          >
+            ↑
+          </button>
+        </div>
 
         {attachment && (
-          <div className="attach">
+          <div className="chip">
             {attachment.kind === "image" ? (
               <img
                 className="thumb"
@@ -588,10 +606,10 @@ function App() {
             ) : (
               <span className="fileicon">▤</span>
             )}
-            <span className="attname">
+            <span className="name">
               {attachment.name}
               {attachment.kind === "file" && (
-                <span className="attmeta"> · {humanSize(attachment.size)}</span>
+                <span className="meta"> · {humanSize(attachment.size)}</span>
               )}
             </span>
             {attachment.kind === "file" && (
@@ -624,19 +642,61 @@ function App() {
         {error === "no-provider" && <p className="hint">{t("hint.noProvider")}</p>}
         {error && error !== "no-provider" && <p className="hint err">{error}</p>}
 
-        <textarea
-          ref={inputRef}
-          className="input"
-          value={text}
-          onChange={onChange}
-          onKeyDown={onInputKey}
-          placeholder={
-            dragging ? t("placeholder.drop") : t("placeholder.default")
-          }
-          spellCheck={false}
-          autoFocus
-          rows={phase === "idle" ? 3 : 1}
-        />
+        {phase !== "idle" && (
+          <>
+            <div className="divider" />
+            <div className="reading">
+              {phase === "judging" && <div className="scan-band" aria-hidden />}
+              {phase === "judging"
+                ? committed.split("\n").map((line, i) =>
+                    line.trim() === "" ? (
+                      <div key={i} className="blank" />
+                    ) : (
+                      <p key={i} className="block">
+                        <MdLine text={line} />
+                      </p>
+                    ),
+                  )
+                : groupRuns(blocks ?? []).map((g, gi) =>
+                    g.kind === "blank" ? (
+                      <div key={`b${g.key}`} className="blank" />
+                    ) : g.matters ? (
+                      <div key={gi} className="kept-run">
+                        {g.items.map((b) => (
+                          <p key={b.index} className="block">
+                            <MdLine text={b.text} />
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      g.items.map((b) => (
+                        <p
+                          key={b.index}
+                          className={`block${revealed ? " filler" : ""}`}
+                        >
+                          <MdLine text={b.text} />
+                        </p>
+                      ))
+                    ),
+                  )}
+            </div>
+          </>
+        )}
+
+        {phase === "result" && blocks && (
+          <div className="verdictbar">
+            <span className="verdict">
+              {filler === 0 && <Checkmark20Filled className="vcheck" />}
+              {verdictMsg}
+            </span>
+            <IconButton
+              label={copied ? t("action.copied") : t("action.copy")}
+              onClick={copyKept}
+            >
+              {copied ? <Checkmark20Filled className="ok" /> : <Copy20Regular />}
+            </IconButton>
+          </div>
+        )}
       </div>
     </div>
   );

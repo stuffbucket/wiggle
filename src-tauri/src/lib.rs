@@ -92,6 +92,30 @@ async fn provider_status() -> ProviderStatus {
     ProviderStatus::probe().await
 }
 
+/// Models the active provider offers (for the picker).
+#[tauri::command]
+async fn list_models() -> Result<Vec<String>, String> {
+    let s = Settings::load();
+    match provider::discover(&s).await {
+        Some(p) => provider::list_models(&p).await,
+        None => Err("no-provider".into()),
+    }
+}
+
+/// Persist the chosen model on whichever provider is active.
+#[tauri::command]
+async fn set_model(model: String) -> Result<(), String> {
+    let mut s = Settings::load();
+    match provider::discover(&s).await {
+        Some(p) => match p.kind {
+            provider::ProviderKind::Ollama => s.ollama.model = model,
+            provider::ProviderKind::Maximal => s.maximal.model = model,
+        },
+        None => s.maximal.model = model,
+    }
+    s.save().map_err(|e| e.to_string())
+}
+
 /// UI config from settings.json.
 #[tauri::command]
 fn get_config() -> Config {
@@ -323,6 +347,8 @@ pub fn run() {
             wiggle_image,
             ingest_path,
             provider_status,
+            list_models,
+            set_model,
             get_config,
             settings_path,
             dismiss,

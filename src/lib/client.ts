@@ -29,6 +29,10 @@ export const ingestPath = (path: string) =>
 
 export const providerStatus = () => invoke<ProviderStatus>("provider_status");
 
+export const listModels = () => invoke<string[]>("list_models");
+
+export const setModel = (model: string) => invoke("set_model", { model });
+
 export const getConfig = () => invoke<UiConfig>("get_config");
 
 export const settingsPath = () => invoke<string>("settings_path");

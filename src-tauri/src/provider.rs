@@ -79,6 +79,40 @@ pub async fn is_up(kind: ProviderKind, base_url: &str) -> bool {
     }
 }
 
+/// List the models a provider offers (embeddings filtered out).
+pub async fn list_models(r: &Resolved) -> Result<Vec<String>, String> {
+    let c = client(Duration::from_secs(8));
+    match r.kind {
+        ProviderKind::Maximal => {
+            let url = format!("{}/v1/models", r.base_url.trim_end_matches('/'));
+            let mut req = c.get(&url).header("anthropic-version", "2023-06-01");
+            if let Some(key) = &r.api_key {
+                req = req.header("x-api-key", key);
+            }
+            let v: Value = req.send().await.map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())?;
+            let data = v.get("data").and_then(Value::as_array).cloned().unwrap_or_default();
+            let mut ids: Vec<String> = data
+                .iter()
+                .filter_map(|m| m.get("id").and_then(Value::as_str))
+                .filter(|id| !id.contains("embedding"))
+                .map(String::from)
+                .collect();
+            ids.sort();
+            Ok(ids)
+        }
+        ProviderKind::Ollama => {
+            let url = format!("{}/api/tags", r.base_url.trim_end_matches('/'));
+            let v: Value = c.get(&url).send().await.map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())?;
+            let models = v.get("models").and_then(Value::as_array).cloned().unwrap_or_default();
+            Ok(models
+                .iter()
+                .filter_map(|m| m.get("name").and_then(Value::as_str))
+                .map(String::from)
+                .collect())
+        }
+    }
+}
+
 /// Resolve the active provider given current settings. Returns `None` when the
 /// desired provider (or, in auto mode, every candidate) is unreachable.
 pub async fn discover(settings: &Settings) -> Option<Resolved> {

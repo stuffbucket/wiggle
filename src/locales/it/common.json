@@ -5,25 +5,26 @@
     "waiting": "in attesa di un modello"
   },
   "placeholder": {
-    "default": "Incolla il thread, trascina uno screenshot, digita…  ⏎ per wiggle",
+    "default": "Incolla, rilascia un'immagine, o digita — ⏎ per wiggle",
     "drop": "rilascialo —"
   },
   "hint": {
-    "noProvider": "Nessun modello ancora. Avvia maximal (localhost:4141) oppure Ollama — Wiggle si connette da solo."
+    "noProvider": "Nessun modello ancora. Avvia maximal (localhost:4141) o Ollama — Wiggle si connette da solo."
   },
   "verdict": {
-    "trimmed": "tagliati {{filler}} di {{total}} · {{kept}} essenziale",
-    "allKept": "niente da tagliare — tutto essenziale",
-    "allFiller": "tutto inutile — niente essenziale qui"
+    "trimmed": "eliminati {{filler}} di {{total}} · {{kept}} essenziali",
+    "allKept": "nulla da eliminare — è tutto essenziale",
+    "allFiller": "tutto superfluo — niente essenziale qui"
   },
   "history": {
     "position": "cronologia · {{pos}} di {{total}}"
   },
   "action": {
-    "copy": "copia essenziale",
+    "copy": "copia essenziali",
     "copied": "copiato",
+    "attach": "allega un'immagine o file",
     "expand": "espandi",
-    "collapse": "riduci",
+    "collapse": "comprimi",
     "new": "ricomincia",
     "open": "apri",
     "reveal": "mostra in Finder",

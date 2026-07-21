@@ -1,18 +1,18 @@
 {
   "status": {
-    "wiggling": "meneando…",
+    "wiggling": "meciéndose…",
     "judging": "evaluando…",
     "waiting": "esperando un modelo"
   },
   "placeholder": {
-    "default": "Pega el hilo, suelta una captura, escribe…  ⏎ para menear",
+    "default": "Pega, suelta una imagen, o escribe — ⏎ para mecer",
     "drop": "suéltalo —"
   },
   "hint": {
     "noProvider": "Sin modelo aún. Arranca maximal (localhost:4141) u Ollama — Wiggle se conecta solo."
   },
   "verdict": {
-    "trimmed": "recortado {{filler}} de {{total}} · {{kept}} esencial",
+    "trimmed": "recortados {{filler}} de {{total}} · {{kept}} esencial",
     "allKept": "nada que recortar — todo es esencial",
     "allFiller": "todo relleno — nada esencial aquí"
   },
@@ -22,6 +22,7 @@
   "action": {
     "copy": "copiar esencial",
     "copied": "copiado",
+    "attach": "adjunta imagen o archivo",
     "expand": "expandir",
     "collapse": "contraer",
     "new": "empezar de nuevo",

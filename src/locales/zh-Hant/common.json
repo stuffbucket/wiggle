@@ -1,29 +1,30 @@
 {
   "status": {
-    "wiggling": "搖晃中…",
-    "judging": "評判中…",
-    "waiting": "等待模型"
+    "wiggling": "處理中…",
+    "judging": "判斷中…",
+    "waiting": "等待模型中"
   },
   "placeholder": {
-    "default": "貼上對話、拖入截圖、輸入…  ⏎ 以搖晃",
-    "drop": "拖進來 —"
+    "default": "貼上、拖放圖像或輸入 — ⏎ 開始處理",
+    "drop": "放開 —"
   },
   "hint": {
-    "noProvider": "還沒有模型。啟動 maximal（localhost:4141）或 Ollama — Wiggle 會自動連接。"
+    "noProvider": "還沒有模型。啟動 maximal (localhost:4141) 或 Ollama — Wiggle 會自動連接。"
   },
   "verdict": {
-    "trimmed": "修剪了 {{filler}} 個（共 {{total}} 個） · {{kept}} 個有用",
-    "allKept": "沒什麼好修剪的 — 全是有用的",
-    "allFiller": "全是廢話 — 沒有有用的內容"
+    "trimmed": "已移除 {{filler}} 個（共 {{total}} 個）· {{kept}} 個有效內容",
+    "allKept": "無須移除 — 全是有效內容",
+    "allFiller": "全是廢話 — 沒有有效內容"
   },
   "history": {
     "position": "歷史 · 第 {{pos}} 個（共 {{total}} 個）"
   },
   "action": {
-    "copy": "複製有用部分",
+    "copy": "複製有效內容",
     "copied": "已複製",
+    "attach": "附加圖像或檔案",
     "expand": "展開",
-    "collapse": "摺疊",
+    "collapse": "收起",
     "new": "重新開始",
     "open": "開啟",
     "reveal": "在 Finder 中顯示",

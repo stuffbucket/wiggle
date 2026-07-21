@@ -5,7 +5,7 @@
     "waiting": "waiting for a model"
   },
   "placeholder": {
-    "default": "Paste the thread, drop a screenshot, type…  ⏎ to wiggle",
+    "default": "Paste, drop an image, or type — ⏎ to wiggle",
     "drop": "drop it —"
   },
   "hint": {
@@ -22,6 +22,7 @@
   "action": {
     "copy": "copy kept",
     "copied": "copied",
+    "attach": "attach an image or file",
     "expand": "expand",
     "collapse": "collapse",
     "new": "start over",

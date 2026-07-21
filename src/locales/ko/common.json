@@ -5,25 +5,26 @@
     "waiting": "모델 대기 중"
   },
   "placeholder": {
-    "default": "스레드 붙여넣기, 스크린샷 드래그, 입력…  ⏎ 로 wiggle",
-    "drop": "여기에 놓으세요 —"
+    "default": "붙여넣기, 이미지 드롭, 또는 입력 — ⏎ 로 wiggle",
+    "drop": "드롭 —"
   },
   "hint": {
-    "noProvider": "아직 모델이 없습니다. maximal (localhost:4141) 또는 Ollama를 시작하세요 — Wiggle이 자동으로 연결됩니다."
+    "noProvider": "모델 없음. maximal (localhost:4141) 또는 Ollama 시작 — Wiggle이 자동 연결됩니다."
   },
   "verdict": {
-    "trimmed": "{{filler}} 제거됨 (전체 {{total}} · {{kept}} 유지)",
-    "allKept": "제거할 것 없음 — 모두 중요함",
-    "allFiller": "모두 불필요 — 중요한 부분 없음"
+    "trimmed": "{{total}} 중 {{filler}} 제거됨 · {{kept}} 필수",
+    "allKept": "제거할 것 없음 — 모두 필수",
+    "allFiller": "모두 불필요 — 필수 없음"
   },
   "history": {
     "position": "기록 · {{pos}} / {{total}}"
   },
   "action": {
-    "copy": "유지된 부분 복사",
+    "copy": "필수 복사",
     "copied": "복사됨",
-    "expand": "펼치기",
-    "collapse": "접기",
+    "attach": "이미지 또는 파일 첨부",
+    "expand": "확장",
+    "collapse": "축소",
     "new": "다시 시작",
     "open": "열기",
     "reveal": "Finder에서 표시",
@@ -32,7 +33,7 @@
     "settings": "설정"
   },
   "tray": {
-    "summon": "Wiggle 실행",
+    "summon": "Wiggle 호출",
     "checkUpdates": "업데이트 확인…",
     "quit": "Wiggle 종료"
   }
