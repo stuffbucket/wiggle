@@ -74,6 +74,26 @@
   box-sizing: border-box;
 }
 
+/* thin, unobtrusive scrollbars everywhere (menus + reading) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(38, 34, 30, 0.18);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(38, 34, 30, 0.3);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 html,
 body,
 #root {
@@ -95,7 +115,7 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding-bottom: 11vh;
+  padding-bottom: 5vh;
   background: var(--color-scrim);
   cursor: default;
 }
@@ -124,7 +144,7 @@ body {
   }
 }
 
-/* ===== input row (top) ===== */
+/* ===== input row (bottom-anchored) ===== */
 .inputrow {
   display: flex;
   align-items: center;
@@ -133,6 +153,12 @@ body {
 }
 .inputrow .input {
   flex: 1 1 auto;
+}
+/* trailing controls pack tight; field→cluster stays generous */
+.rowtrail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 .inputrow.dragover {
   outline: 1px dashed var(--color-border-focus);
@@ -261,7 +287,7 @@ body {
 
 .modelmenu {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   right: 0;
   z-index: 10;
   width: 248px;
@@ -277,7 +303,7 @@ body {
 @keyframes menuin {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -315,7 +341,7 @@ body {
   background: var(--color-accent);
 }
 
-/* send button — the one filled primary */
+/* send button — the one filled primary (paper airplane) */
 .send {
   display: inline-flex;
   align-items: center;
@@ -326,12 +352,14 @@ body {
   border-radius: var(--radius-md);
   background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: 17px;
-  line-height: 1;
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
+}
+.send svg {
+  width: 18px;
+  height: 18px;
 }
 .send:hover:not(:disabled) {
   background: var(--color-accent-pressed);
@@ -512,3 +540,38 @@ body {
 }
 
 /* small key-cap for the ⏎ hint in placeholder is not needed; kept minimal */
+
+/* hand-drawn brush strikethroughs over filler */
+.reading {
+  margin-bottom: var(--space-2);
+}
+.strikes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.strike {
+  fill: var(--navy);
+  opacity: 0;
+  animation: strikein 240ms var(--ease-out) forwards;
+}
+@keyframes strikein {
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strike {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
+/* copy affordance, right-aligned under the output */
+.outbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}

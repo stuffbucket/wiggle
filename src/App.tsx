@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -14,6 +20,7 @@ import {
   Dismiss20Regular,
   Open20Regular,
   OpenFolder20Regular,
+  Send20Filled,
 } from "@fluentui/react-icons";
 import i18n, { normalizeLocale } from "./i18n";
 import {
@@ -31,6 +38,7 @@ import {
 } from "./lib/client";
 import { abToBase64, humanSize } from "./lib/format";
 import { wantsHistoryDown, wantsHistoryUp } from "./lib/history";
+import { markSeed, strikePath } from "./lib/strike";
 import { IconButton } from "./lib/IconButton";
 import markUrl from "./assets/wiggle-mark.svg";
 import "./App.css";
@@ -47,6 +55,7 @@ type Interaction = {
 };
 
 type Phase = "idle" | "judging" | "result";
+type Strike = { d: string; delay: number };
 
 const IDLE_MS = 90_000;
 const HISTORY_CAP = 25;
@@ -78,29 +87,6 @@ function MdLine({ text }: { text: string }) {
   );
 }
 
-// Group consecutive same-verdict blocks into runs so kept runs can carry the
-// hanging signal-rule; blank lines break runs.
-type Run =
-  | { kind: "blank"; key: number }
-  | { kind: "run"; matters: boolean; items: Block[] };
-
-function groupRuns(blocks: Block[]): Run[] {
-  const out: Run[] = [];
-  for (const b of blocks) {
-    if (b.text.trim() === "") {
-      out.push({ kind: "blank", key: b.index });
-      continue;
-    }
-    const last = out[out.length - 1];
-    if (last && last.kind === "run" && last.matters === b.matters) {
-      last.items.push(b);
-    } else {
-      out.push({ kind: "run", matters: b.matters, items: [b] });
-    }
-  }
-  return out;
-}
-
 const shortModel = (m: string) =>
   m.replace(/^claude-/, "").replace(/-\d{6,8}$/, "");
 
@@ -118,21 +104,24 @@ function App() {
   });
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [revealed, setRevealed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [entries, setEntries] = useState<Interaction[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
+  const [strikes, setStrikes] = useState<Strike[]>([]);
+  const [strikeH, setStrikeH] = useState(0);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const readingRef = useRef<HTMLDivElement>(null);
   const dirtyRef = useRef(false);
   const draftRef = useRef("");
   const lastSummonRef = useRef(Date.now());
   const programmaticRef = useRef(false);
   const idRef = useRef(0);
+  const nonceRef = useRef(1);
   const liveRef = useRef({ blocks, committed, attachment });
   useEffect(() => {
     liveRef.current = { blocks, committed, attachment };
@@ -171,6 +160,7 @@ function App() {
   const loadInteraction = useCallback(
     (it: Interaction) => {
       programmaticRef.current = true;
+      nonceRef.current = (nonceRef.current + 1) & 0x7fffffff;
       setText(it.input);
       setCommitted(it.input);
       setBlocks(it.blocks);
@@ -246,7 +236,6 @@ function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismiss, pickerOpen]);
 
-  // close the model menu on outside click
   useEffect(() => {
     if (!pickerOpen) return;
     const onDown = (e: MouseEvent) => {
@@ -258,15 +247,48 @@ function App() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [pickerOpen]);
 
-  // staggered filler reveal
-  useEffect(() => {
-    if (phase === "result" && blocks) {
-      setRevealed(false);
-      const id = requestAnimationFrame(() =>
-        requestAnimationFrame(() => setRevealed(true)),
-      );
-      return () => cancelAnimationFrame(id);
+  // Measure filler lines and generate a hand-drawn brush strike per visual line.
+  useLayoutEffect(() => {
+    const cont = readingRef.current;
+    if (phase !== "result" || !blocks || !cont) {
+      setStrikes([]);
+      return;
     }
+    let cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      const cRect = cont.getBoundingClientRect();
+      const st = cont.scrollTop;
+      const sl = cont.scrollLeft;
+      const nonce = nonceRef.current;
+      const out: Strike[] = [];
+      let order = 0;
+      cont.querySelectorAll<HTMLElement>(".block.filler").forEach((el, bi) => {
+        const rects = el.getClientRects();
+        for (let ri = 0; ri < rects.length; ri++) {
+          const r = rects[ri];
+          if (r.width < 6) continue;
+          const y = r.top - cRect.top + st + r.height * 0.58;
+          const x1 = r.left - cRect.left + sl;
+          const x2 = r.right - cRect.left + sl;
+          out.push({
+            d: strikePath(x1, x2, y, markSeed(bi, ri, nonce)),
+            delay: order * 55,
+          });
+          order++;
+        }
+      });
+      setStrikes(out);
+      setStrikeH(cont.scrollHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(cont);
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+    };
   }, [phase, blocks]);
 
   const wiggleImage = useCallback(
@@ -284,10 +306,10 @@ function App() {
       setCommitted("");
       setPhase("judging");
       setError(null);
-      setRevealed(false);
       setCursor(null);
       try {
         const res = await wiggleImageCmd(mediaType, base64);
+        nonceRef.current = (nonceRef.current + 1) & 0x7fffffff;
         setBlocks(res);
         setPhase("result");
       } catch (e) {
@@ -314,7 +336,6 @@ function App() {
     setBlocks(null);
     setPhase("judging");
     setError(null);
-    setRevealed(false);
     setCursor(null);
     draftRef.current = "";
     setText("");
@@ -325,6 +346,7 @@ function App() {
       const res = isImage
         ? await wiggleImageCmd(attachment.mediaType, attachment.base64)
         : await wiggleText(shown);
+      nonceRef.current = (nonceRef.current + 1) & 0x7fffffff;
       setBlocks(res);
       setPhase("result");
       if (!isImage) setAttachment(null);
@@ -496,104 +518,73 @@ function App() {
     }
   };
 
-  const nonBlank = (blocks ?? []).filter((b) => b.text.trim() !== "");
-  const kept = nonBlank.filter((b) => b.matters).length;
-  const total = nonBlank.length;
-  const filler = total - kept;
+  const kept = (blocks ?? []).filter(
+    (b) => b.matters && b.text.trim() !== "",
+  ).length;
   const canSend =
     phase !== "judging" && (attachment?.kind === "image" || text.trim() !== "");
-
-  const verdictMsg =
-    filler === 0
-      ? t("verdict.allKept")
-      : kept === 0
-        ? t("verdict.allFiller")
-        : t("verdict.trimmed", { filler, total, kept });
 
   return (
     <div className="scrim" onMouseDown={dismiss}>
       <div className="card" onMouseDown={(e) => e.stopPropagation()}>
-        {/* input row */}
-        <div className={`inputrow${dragging ? " dragover" : ""}`}>
-          <img className="mark" src={markUrl} alt="Wiggle" />
-          <textarea
-            ref={inputRef}
-            className="input"
-            value={text}
-            onChange={onChange}
-            onKeyDown={onInputKey}
-            placeholder={
-              dragging ? t("placeholder.drop") : t("placeholder.default")
-            }
-            spellCheck={false}
-            autoFocus
-            rows={1}
-          />
-          {cursor !== null && (
-            <span className="histpos">
-              ‹ {cursor + 1}/{entries.length}
-            </span>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,text/*"
-            hidden
-            onChange={onFile}
-          />
-          <IconButton
-            label={t("action.attach")}
-            onClick={() => fileRef.current?.click()}
-          >
-            <Attach20Regular />
-          </IconButton>
-          <div className="modelpick" ref={pickerRef}>
-            <button
-              className="modelbtn"
-              onClick={openPicker}
-              title={status.model}
-            >
-              <span
-                className="dot"
-                data-online={status.online}
-                data-busy={phase === "judging"}
-              />
-              <span className="name">
-                {status.model ? shortModel(status.model) : t("status.waiting")}
-              </span>
-              <span aria-hidden>▾</span>
-            </button>
-            {pickerOpen && (
-              <div className="modelmenu">
-                {models.length === 0 ? (
-                  <div className="modelitem" aria-disabled>
-                    …
-                  </div>
-                ) : (
-                  models.map((m) => (
-                    <button
-                      key={m}
-                      className="modelitem"
-                      data-sel={m === status.model}
-                      onClick={() => chooseModel(m)}
+        {/* output above the input */}
+        {phase !== "idle" && (
+          <div className="reading" ref={readingRef}>
+            {phase === "judging" && <div className="scan-band" aria-hidden />}
+            {phase === "judging"
+              ? committed.split("\n").map((line, i) =>
+                  line.trim() === "" ? (
+                    <div key={i} className="blank" />
+                  ) : (
+                    <p key={i} className="block">
+                      <MdLine text={line} />
+                    </p>
+                  ),
+                )
+              : (blocks ?? []).map((b) =>
+                  b.text.trim() === "" ? (
+                    <div key={b.index} className="blank" />
+                  ) : (
+                    <p
+                      key={b.index}
+                      className={`block${b.matters ? "" : " filler"}`}
                     >
-                      {shortModel(m)}
-                    </button>
-                  ))
+                      <MdLine text={b.text} />
+                    </p>
+                  ),
                 )}
-              </div>
+            {phase === "result" && strikes.length > 0 && (
+              <svg
+                className="strikes"
+                width="100%"
+                height={strikeH}
+                aria-hidden
+              >
+                {strikes.map((s, i) => (
+                  <path
+                    key={i}
+                    d={s.d}
+                    className="strike"
+                    style={{ animationDelay: `${s.delay}ms` }}
+                  />
+                ))}
+              </svg>
             )}
           </div>
-          <button
-            className="send"
-            onClick={runWiggle}
-            disabled={!canSend}
-            aria-label="Wiggle"
-            title="Wiggle (⏎)"
-          >
-            ↑
-          </button>
-        </div>
+        )}
+
+        {phase === "result" && blocks && kept > 0 && (
+          <div className="outbar">
+            <IconButton
+              label={copied ? t("action.copied") : t("action.copy")}
+              onClick={copyKept}
+            >
+              {copied ? <Checkmark20Filled className="ok" /> : <Copy20Regular />}
+            </IconButton>
+          </div>
+        )}
+
+        {phase !== "idle" && <div className="divider" />}
 
         {attachment && (
           <div className="chip">
@@ -642,61 +633,89 @@ function App() {
         {error === "no-provider" && <p className="hint">{t("hint.noProvider")}</p>}
         {error && error !== "no-provider" && <p className="hint err">{error}</p>}
 
-        {phase !== "idle" && (
-          <>
-            <div className="divider" />
-            <div className="reading">
-              {phase === "judging" && <div className="scan-band" aria-hidden />}
-              {phase === "judging"
-                ? committed.split("\n").map((line, i) =>
-                    line.trim() === "" ? (
-                      <div key={i} className="blank" />
-                    ) : (
-                      <p key={i} className="block">
-                        <MdLine text={line} />
-                      </p>
-                    ),
-                  )
-                : groupRuns(blocks ?? []).map((g, gi) =>
-                    g.kind === "blank" ? (
-                      <div key={`b${g.key}`} className="blank" />
-                    ) : g.matters ? (
-                      <div key={gi} className="kept-run">
-                        {g.items.map((b) => (
-                          <p key={b.index} className="block">
-                            <MdLine text={b.text} />
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      g.items.map((b) => (
-                        <p
-                          key={b.index}
-                          className={`block${revealed ? " filler" : ""}`}
-                        >
-                          <MdLine text={b.text} />
-                        </p>
-                      ))
-                    ),
-                  )}
-            </div>
-          </>
-        )}
-
-        {phase === "result" && blocks && (
-          <div className="verdictbar">
-            <span className="verdict">
-              {filler === 0 && <Checkmark20Filled className="vcheck" />}
-              {verdictMsg}
+        {/* input row — anchored at the bottom */}
+        <div className={`inputrow${dragging ? " dragover" : ""}`}>
+          <img className="mark" src={markUrl} alt="Wiggle" />
+          <textarea
+            ref={inputRef}
+            className="input"
+            value={text}
+            onChange={onChange}
+            onKeyDown={onInputKey}
+            placeholder={
+              dragging ? t("placeholder.drop") : t("placeholder.default")
+            }
+            spellCheck={false}
+            autoFocus
+            rows={1}
+          />
+          {cursor !== null && (
+            <span className="histpos">
+              ‹ {cursor + 1}/{entries.length}
             </span>
+          )}
+          <div className="rowtrail">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,text/*"
+              hidden
+              onChange={onFile}
+            />
             <IconButton
-              label={copied ? t("action.copied") : t("action.copy")}
-              onClick={copyKept}
+              label={t("action.attach")}
+              onClick={() => fileRef.current?.click()}
             >
-              {copied ? <Checkmark20Filled className="ok" /> : <Copy20Regular />}
+              <Attach20Regular />
             </IconButton>
+            <div className="modelpick" ref={pickerRef}>
+              <button
+                className="modelbtn"
+                onClick={openPicker}
+                title={status.model}
+              >
+                <span
+                  className="dot"
+                  data-online={status.online}
+                  data-busy={phase === "judging"}
+                />
+                <span className="name">
+                  {status.model
+                    ? shortModel(status.model)
+                    : t("status.waiting")}
+                </span>
+                <span aria-hidden>▾</span>
+              </button>
+              {pickerOpen && (
+                <div className="modelmenu">
+                  {models.length === 0 ? (
+                    <div className="modelitem">…</div>
+                  ) : (
+                    models.map((m) => (
+                      <button
+                        key={m}
+                        className="modelitem"
+                        data-sel={m === status.model}
+                        onClick={() => chooseModel(m)}
+                      >
+                        {shortModel(m)}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              className="send"
+              onClick={runWiggle}
+              disabled={!canSend}
+              aria-label="Wiggle"
+              title="Wiggle (⏎)"
+            >
+              <Send20Filled />
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
